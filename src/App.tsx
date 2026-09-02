@@ -83,6 +83,23 @@ import {
 } from './photo/asset-store'
 import { canStageExportSnapshot } from './export/snapshot-guard'
 import {
+  assertEmptyToolInput,
+  createWallArtAction,
+  setPrinterBedAction,
+  shapeFabricationPackageResult,
+  summarizeFabricationPlan,
+  type PackingFailure,
+  type WallArtActionResult,
+} from './webmcp/actions'
+import {
+  registerReliefForgeTools,
+  type ReliefForgeJsonValue,
+  type ReliefForgeToolDispatcher,
+  type ReliefForgeToolExecutionContext,
+  type ReliefForgeToolInputs,
+  type ReliefForgeToolName,
+} from './webmcp/register'
+import {
   LEGACY_PROJECT_STORAGE_KEY as LEGACY_STORAGE_KEY,
   PROJECT_STORAGE_KEY as STORAGE_KEY,
   persistFreshProjectConfig,
@@ -114,6 +131,7 @@ type PreviewMode = 'model' | 'assembly' | 'plates'
 type WorkflowStep = MobileWorkflowSectionId
 type ExportState = 'idle' | 'master' | 'tiled' | 'package'
 type NumericPrinterField = 'bedWidthMm' | 'bedDepthMm' | 'marginMm' | 'spacingMm'
+type AgentToolsState = 'checking' | 'ready' | 'unavailable' | 'error'
 
 interface PatternOption {
   kind: PatternKind
@@ -154,6 +172,14 @@ interface PreparedDownload {
   projectId: string
   summary: string
   url: string
+}
+
+interface AgentPlanSnapshot extends WallArtActionResult {
+  revision: number
+}
+
+function asWebMcpResult(value: unknown): ReliefForgeJsonValue {
+  return JSON.parse(JSON.stringify(value)) as ReliefForgeJsonValue
 }
 
 const PRINTER_INPUT_IDS: Record<NumericPrinterField, string> = {
@@ -448,6 +474,7 @@ function App() {
   const [selectedTileId, setSelectedTileId] = useState<string>()
   const [selectedPlateIndex, setSelectedPlateIndex] = useState(1)
   const [exportState, setExportState] = useState<ExportState>('idle')
+  const [agentToolsState, setAgentToolsState] = useState<AgentToolsState>('checking')
   const [notice, setNotice] = useState<string | undefined>(initialConfig.notice)
   const [preparedDownload, setPreparedDownload] = useState<PreparedDownload>()
   const [sizeDraft, setSizeDraft] = useState({
@@ -476,10 +503,16 @@ function App() {
   const mobileSubsectionHeadingRef = useRef<HTMLParagraphElement | null>(null)
   const currentProjectIdRef = useRef<string | undefined>(undefined)
   const configRevisionRef = useRef(0)
+  const renderedConfigRevisionRef = useRef(0)
   const configRef = useRef(config)
+  const agentPlanRef = useRef<AgentPlanSnapshot | null>(null)
+  const agentDispatcherRef = useRef<ReliefForgeToolDispatcher>((async () => {
+    throw new Error('Relief Forge agent tools are still initializing.')
+  }) as ReliefForgeToolDispatcher)
   const photoMutationGateRef = useRef(new PhotoMutationGate())
   const depthPaintMutationRef = useRef(0)
   const pendingDepthPaintShaRef = useRef<string | undefined>(undefined)
+  const agentExportInProgressRef = useRef(false)
   configRef.current = config
 
   const result = useMemo(() => {
@@ -521,6 +554,24 @@ function App() {
   const selectedGuide = config.guides.lines.find((line) => line.id === selectedGuideId)
   const maxHeight = project ? Math.max(...project.tiles.map((tile) => tile.heightMm)) : 0
   const solidVolumeCm3 = project ? project.diagnostics.fullMesh.volumeMm3 / 1_000 : 0
+  const currentPackingFailure: PackingFailure | undefined = project && !packing && result.error
+    ? {
+        code: 'packing_failed',
+        message: result.error,
+        usableWidthMm: config.printer.bedWidthMm - config.printer.marginMm * 2,
+        usableDepthMm: config.printer.bedDepthMm - config.printer.marginMm * 2,
+      }
+    : undefined
+  agentPlanRef.current = project
+    ? {
+        config: project.config,
+        project,
+        packing: packing ?? undefined,
+        packingError: currentPackingFailure,
+        summary: summarizeFabricationPlan(project, packing ?? undefined, currentPackingFailure),
+        revision: configRevisionRef.current,
+      }
+    : null
   const guideDrawingEnabled = guideWorkspaceOpen && guideMode === 'draw'
   const activePhoto = config.source.kind === 'photo' ? config.source.photo : undefined
   const activePhotoAsset = activePhoto ? photoAssets[activePhoto.assetSha256] : undefined
@@ -643,7 +694,8 @@ function App() {
 
   useLayoutEffect(() => {
     currentProjectIdRef.current = project?.id
-  }, [project?.id])
+    renderedConfigRevisionRef.current = configRevisionRef.current
+  }, [config, project?.id])
 
   useEffect(() => () => {
     if (preparedDownload) URL.revokeObjectURL(preparedDownload.url)
@@ -698,6 +750,7 @@ function App() {
       const normalized = createWallArtConfig(next)
       configRevisionRef.current += 1
       configRef.current = normalized
+      agentPlanRef.current = null
       setConfig(normalized)
       setNotice(undefined)
     } catch (error) {
@@ -1403,6 +1456,7 @@ function App() {
     depthPaintMutationRef.current += 1
     pendingDepthPaintShaRef.current = undefined
     configRef.current = freshConfig
+    agentPlanRef.current = null
     setConfig(freshConfig)
     setPhotoAssets({})
     setDepthPaintAssets({})
@@ -1468,7 +1522,7 @@ function App() {
     label: string,
     projectSnapshot: NonNullable<typeof project>,
     configRevisionSnapshot: number,
-  ) => {
+  ): PreparedDownload | undefined => {
     if (!canStageExportSnapshot({
       expectedProjectId: projectSnapshot.id,
       currentProjectId: currentProjectIdRef.current,
@@ -1477,16 +1531,18 @@ function App() {
       depthPaintPersistencePending: pendingDepthPaintShaRef.current !== undefined,
     })) {
       setNotice(`The design changed while ${label.toLowerCase()} was building. No stale download was offered. Build it again for ${currentProjectIdRef.current ?? 'the current project'}.`)
-      return
+      return undefined
     }
-    setPreparedDownload({
+    const prepared = {
       filename,
       label,
       projectId: projectSnapshot.id,
       summary: `${projectSnapshot.config.design.family} · ${projectSnapshot.config.tile.shape} · ${projectSnapshot.config.grid.columns} × ${projectSnapshot.config.grid.rows} · ${projectSnapshot.tiles.length} parts · ${projectSnapshot.widthMm.toFixed(1)} × ${projectSnapshot.depthMm.toFixed(1)} mm`,
       url: URL.createObjectURL(blob),
-    })
+    }
+    setPreparedDownload(prepared)
     setNotice(`${label} built for ${projectSnapshot.id}. Click the highlighted Save file now link; your browser will save it to its configured download location or ask where to put it.`)
+    return prepared
   }
 
   const saveProject = () => {
@@ -1658,6 +1714,207 @@ function App() {
     setPreviewMode(nextMode)
   }
 
+  const waitForVisibleState = (
+    predicate: () => boolean,
+    signal: AbortSignal | undefined,
+    failureMessage: string,
+  ): Promise<void> => new Promise((resolve, reject) => {
+    const startedAt = performance.now()
+    let frame = 0
+    const cleanUp = () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      signal?.removeEventListener('abort', onAbort)
+    }
+    const onAbort = () => {
+      cleanUp()
+      reject(new Error('The agent tool call was cancelled.'))
+    }
+    const check = () => {
+      if (signal?.aborted) {
+        onAbort()
+        return
+      }
+      if (predicate()) {
+        cleanUp()
+        resolve()
+        return
+      }
+      if (performance.now() - startedAt > 5_000) {
+        cleanUp()
+        reject(new Error(failureMessage))
+        return
+      }
+      frame = window.requestAnimationFrame(check)
+    }
+    signal?.addEventListener('abort', onAbort, { once: true })
+    frame = window.requestAnimationFrame(check)
+  })
+
+  const currentAgentPlan = (): AgentPlanSnapshot => {
+    const plan = agentPlanRef.current
+    if (
+      !plan
+      || plan.revision !== configRevisionRef.current
+      || plan.project.id !== currentProjectIdRef.current
+    ) {
+      throw new Error('The visible geometry is still updating. Wait for Relief Forge to finish, then try again.')
+    }
+    return plan
+  }
+
+  const dispatchAgentTool = async (
+    name: ReliefForgeToolName,
+    input: ReliefForgeToolInputs[ReliefForgeToolName],
+    context: ReliefForgeToolExecutionContext,
+  ): Promise<ReliefForgeJsonValue> => {
+    if (context.signal?.aborted) throw new Error('The agent tool call was cancelled.')
+
+    if (name === 'relief_forge_create_wall_art') {
+      const action = createWallArtAction(input, configRef.current)
+      activateFreshProject(action.config)
+      const revision = configRevisionRef.current
+      currentProjectIdRef.current = action.project.id
+      agentPlanRef.current = { ...action, revision }
+      setNotice(`Agent created ${action.project.id}: ${action.summary.finishedSizeMm.width.toFixed(1)} × ${action.summary.finishedSizeMm.height.toFixed(1)} mm, ${action.summary.partCount} printable parts.`)
+      await waitForVisibleState(
+        () => renderedConfigRevisionRef.current >= revision
+          && Boolean(document.body.textContent?.includes(action.project.id)),
+        context.signal,
+        'The configured wall art did not become visible in time.',
+      )
+      return asWebMcpResult(action.summary)
+    }
+
+    if (name === 'relief_forge_set_printer_bed') {
+      const action = setPrinterBedAction(input, configRef.current, {
+        photoFields: photoAssets,
+        depthPaintFields: depthPaintAssets,
+      })
+      configRevisionRef.current += 1
+      const revision = configRevisionRef.current
+      configRef.current = action.config
+      currentProjectIdRef.current = action.project.id
+      agentPlanRef.current = { ...action, revision }
+      setConfig(action.config)
+      setPreparedDownload(undefined)
+      setPrinterDraft({
+        bedWidthMm: formatMillimetres(action.config.printer.bedWidthMm),
+        bedDepthMm: formatMillimetres(action.config.printer.bedDepthMm),
+        marginMm: formatMillimetres(action.config.printer.marginMm),
+        spacingMm: formatMillimetres(action.config.printer.spacingMm),
+      })
+      setSelectedPlateIndex(1)
+      selectWorkflowStep('build')
+      setPreviewMode('plates')
+      setNotice(action.summary.digitalFit.status === 'fits'
+        ? `Agent packed ${action.summary.partCount} parts across ${action.summary.digitalFit.plateCount} plates for the requested bed.`
+        : `The requested printer settings are visible, but packing needs attention: ${action.packingError?.message ?? 'not every part fits.'}`)
+      await waitForVisibleState(
+        () => renderedConfigRevisionRef.current >= revision
+          && Boolean(document.body.textContent?.includes(action.project.id)),
+        context.signal,
+        'The printer configuration did not become visible in time.',
+      )
+      return asWebMcpResult(action.summary)
+    }
+
+    if (name === 'relief_forge_inspect_fabrication_plan') {
+      assertEmptyToolInput(input)
+      return asWebMcpResult(currentAgentPlan().summary)
+    }
+
+    assertEmptyToolInput(input)
+    const plan = currentAgentPlan()
+    if (!plan.packing || plan.packingError) {
+      throw new Error('Resolve the visible printer packing warning before preparing the fabrication package.')
+    }
+    if (
+      plan.project.tiles.length === 0
+      || !plan.project.diagnostics.allTilesClosedManifold
+      || !plan.project.diagnostics.fullMesh.closedManifold
+      || !plan.project.diagnostics.fullMesh.outwardWinding
+    ) {
+      throw new Error('Resolve the visible digital geometry warning before preparing the fabrication package.')
+    }
+    if (
+      depthPaintBusy
+      || depthPaintRestoreState === 'loading'
+      || pendingDepthPaintShaRef.current !== undefined
+    ) {
+      throw new Error('Wait for the current depth-paint asset to finish saving or restoring before preparing the fabrication package.')
+    }
+    if (exportState !== 'idle' || agentExportInProgressRef.current) {
+      throw new Error('A fabrication export is already in progress. Wait for it to finish before preparing another package.')
+    }
+    const projectSnapshot = plan.project
+    const packingSnapshot = plan.packing
+    const revisionSnapshot = plan.revision
+    agentExportInProgressRef.current = true
+    setExportState('package')
+    setPreparedDownload(undefined)
+    selectWorkflowStep(
+      'export',
+      false,
+      isMobileEditorViewport ? getMobileWorkflowLocation('build-save') : undefined,
+    )
+    setNotice(`Agent is building the fabrication package for ${projectSnapshot.id}.`)
+    try {
+      const exports = await import('./export')
+      if (context.signal?.aborted) throw new Error('The agent tool call was cancelled.')
+      const blob = await exports.createFabricationPackage(
+        projectSnapshot,
+        packingSnapshot,
+        { includeA4: true, includeLetter: true },
+      )
+      if (context.signal?.aborted) throw new Error('The agent tool call was cancelled.')
+      const filename = `${projectSnapshot.id}-fabrication-package.zip`
+      const staged = stageDownload(
+        blob,
+        filename,
+        'Fabrication package',
+        projectSnapshot,
+        revisionSnapshot,
+      )
+      if (!staged) throw new Error('The design changed during export, so no stale download was offered.')
+      await waitForVisibleState(
+        () => document.querySelector<HTMLAnchorElement>('a.prepared-download')?.download === filename,
+        context.signal,
+        'The fabrication package finished, but its Save file now link did not become visible in time.',
+      )
+      return asWebMcpResult(shapeFabricationPackageResult(plan, {
+        fileName: filename,
+        byteLength: blob.size,
+        saveLinkReady: true,
+      }))
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Fabrication package preparation failed.')
+      throw error
+    } finally {
+      agentExportInProgressRef.current = false
+      setExportState('idle')
+    }
+  }
+
+  agentDispatcherRef.current = dispatchAgentTool as ReliefForgeToolDispatcher
+
+  useEffect(() => {
+    const registration = registerReliefForgeTools(agentDispatcherRef)
+    if (!registration.supported) {
+      setAgentToolsState('unavailable')
+      return registration.dispose
+    }
+    let active = true
+    setAgentToolsState('checking')
+    void registration.ready.then(
+      () => { if (active) setAgentToolsState('ready') },
+      () => { if (active) setAgentToolsState('error') },
+    )
+    return () => {
+      active = false
+      registration.dispose()
+    }
+  }, [])
+
   const workflowHeading = workflowStep === 'shape' ? undefined : WORKFLOW_HEADINGS[workflowStep]
 
   return (
@@ -1704,7 +1961,17 @@ function App() {
           ))}
         </nav>
         <div className="topbar-actions">
-          <span className="local-badge"><i />WEBMCP CHALLENGE · {APP_BUILD_LABEL}</span>
+          <span className="local-badge" data-agent-tools={agentToolsState} aria-live="polite">
+            <i />{
+              agentToolsState === 'ready'
+                ? '4 AGENT TOOLS READY'
+                : agentToolsState === 'unavailable'
+                  ? 'MANUAL MODE · WEBMCP UNAVAILABLE'
+                  : agentToolsState === 'error'
+                    ? 'AGENT TOOLS NEED ATTENTION'
+                    : 'CONNECTING AGENT TOOLS'
+            } · {APP_BUILD_LABEL}
+          </span>
           <button {...controlHelp('Create a new deterministic variation while keeping every other design setting unchanged.')} className="button button--ghost" type="button" onClick={randomizeSeed}><Icon name="shuffle" />New seed</button>
           <button
             {...controlHelp('Reset the entire project to Relief Forge defaults, including design settings, guides, colors, printer settings, imported photo data, and depth painting. Downloaded files stay unchanged. A confirmation appears first.')}

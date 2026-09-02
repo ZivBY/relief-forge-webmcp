@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 const localBindingConfig = {
   main: 'vinext/server/fetch-handler',
   compatibility_flags: ['nodejs_compat'],
+  observability: { enabled: false },
 }
 
 export default defineConfig(async ({ mode }) => {

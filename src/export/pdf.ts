@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 
 import type { GeneratedTile, WallArtProject } from '../core';
+import { sha256Hex } from '../core/photo-color';
 
 export type AssemblyPaper = 'a4' | 'letter';
 
@@ -403,6 +404,8 @@ function makeDocument(widthMm: number, heightMm: number): jsPDF {
 }
 
 function setPdfProperties(doc: jsPDF, project: WallArtProject, title: string): void {
+  doc.setCreationDate("D:20000101000000+00'00'");
+  doc.setFileId(sha256Hex(new TextEncoder().encode(project.id)).slice(0, 32));
   doc.setProperties({
     title,
     subject: `Assembly map for ${project.id}`,

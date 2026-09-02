@@ -39,6 +39,7 @@ if (!isInsideDistribution(generatedWranglerPath)) throw new Error('Generated Wra
 const generatedWrangler = JSON.parse(await readFile(generatedWranglerPath, 'utf8'))
 delete generatedWrangler.configPath
 delete generatedWrangler.userConfigPath
+generatedWrangler.observability = { enabled: false }
 if (
   generatedWrangler.main !== 'index.js'
   || generatedWrangler.assets?.directory !== '../client'
@@ -46,6 +47,9 @@ if (
 ) throw new Error('Hosted build is not using the expected Vinext server entry point.')
 if ((generatedWrangler.d1_databases?.length ?? 0) > 0 || (generatedWrangler.r2_buckets?.length ?? 0) > 0) {
   throw new Error('Challenge build must not contain D1 or R2 bindings.')
+}
+if (generatedWrangler.observability?.enabled !== false) {
+  throw new Error('Challenge build must keep platform observability disabled.')
 }
 await writeFile(generatedWranglerPath, `${JSON.stringify(generatedWrangler)}\n`, 'utf8')
 

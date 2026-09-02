@@ -177,6 +177,16 @@ describe('fabrication package export', () => {
     expect(blob.size).toBeGreaterThan(2_000);
   });
 
+  it('creates byte-for-byte deterministic fabrication ZIPs', async () => {
+    const { project, packing } = fixture();
+    const options = { includeA4: true, includeLetter: true };
+
+    const first = await createFabricationPackageBytes(project, packing, options);
+    const second = await createFabricationPackageBytes(project, packing, options);
+
+    expect(first).toEqual(second);
+  });
+
   it('labels a mixed-color plate with every represented palette index and HEX value', () => {
     const project = generateWallArt({
       seed: 'mixed-color-plate-label',

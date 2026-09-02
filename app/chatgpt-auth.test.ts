@@ -41,14 +41,14 @@ describe('Sites ChatGPT identity', () => {
     headerReader.mockResolvedValueOnce(requestHeaders({
       'oai-authenticated-user-id': 'friend-user',
       'oai-authenticated-user-email': 'friend@example.com',
-      'oai-authenticated-user-full-name': 'Andy%20Cooper',
+      'oai-authenticated-user-full-name': 'Test%20Reviewer',
       'oai-authenticated-user-full-name-encoding': 'percent-encoded-utf-8',
     }))
     await expect(getChatGPTUser()).resolves.toEqual({
       userId: 'friend-user',
       email: 'friend@example.com',
-      fullName: 'Andy Cooper',
-      displayName: 'Andy Cooper',
+      fullName: 'Test Reviewer',
+      displayName: 'Test Reviewer',
     })
   })
 })

@@ -36,6 +36,7 @@ export interface FabricationPackageOptions {
 }
 
 const ZIP_MIME = 'application/zip';
+const FIXED_ZIP_DATE = new Date('1980-01-01T00:00:00.000Z');
 
 function safeFileSegment(value: string): string {
   const cleaned = value
@@ -82,23 +83,24 @@ export async function createFabricationPackageBytes(
   const includeA4 = options.includeA4 ?? true;
   const includeLetter = options.includeLetter ?? true;
   const zip = new JSZip();
+  const fileOptions = { date: FIXED_ZIP_DATE, createFolders: false };
 
-  zip.file('pdf/master-1-to-1.pdf', createMasterAssemblyPdfBytes(project));
+  zip.file('pdf/master-1-to-1.pdf', createMasterAssemblyPdfBytes(project), fileOptions);
   if (includeA4) {
-    zip.file('pdf/tiled-a4.pdf', createTiledAssemblyPdfBytes(project, { paper: 'a4' }));
+    zip.file('pdf/tiled-a4.pdf', createTiledAssemblyPdfBytes(project, { paper: 'a4' }), fileOptions);
   }
   if (includeLetter) {
-    zip.file('pdf/tiled-us-letter.pdf', createTiledAssemblyPdfBytes(project, { paper: 'letter' }));
+    zip.file('pdf/tiled-us-letter.pdf', createTiledAssemblyPdfBytes(project, { paper: 'letter' }), fileOptions);
   }
 
-  zip.file('project/project.json', createProjectExportJson(project, packing));
+  zip.file('project/project.json', createProjectExportJson(project, packing), fileOptions);
   if (project.sourceAsset && project.config.source.kind === 'photo') {
     const analysis = analyzePhotoAsset(
       project.sourceAsset,
       project.config.source.photo!.requestedColorCount,
       project.config.palette.colors,
     );
-    zip.file('project/photo/canonical-field.rgba', project.sourceAsset.rgba8);
+    zip.file('project/photo/canonical-field.rgba', project.sourceAsset.rgba8, fileOptions);
     zip.file('project/photo/source.json', JSON.stringify({
       version: project.sourceAsset.version,
       width: project.sourceAsset.width,
@@ -119,7 +121,7 @@ export async function createFabricationPackageBytes(
         note: 'Color metrics evaluate the palette limit at 100% photo color influence.',
       },
       file: 'canonical-field.rgba',
-    }, null, 2));
+    }, null, 2), fileOptions);
   }
   if (project.config.localDepth.paint) {
     const asset = project.depthPaintAsset;
@@ -129,17 +131,18 @@ export async function createFabricationPackageBytes(
     zip.file(
       'project/depth-paint/canonical-field.rfdepth',
       encodeDepthPaintFieldAsset(asset),
+      fileOptions,
     );
     zip.file('project/depth-paint/descriptor.json', JSON.stringify({
       ...project.config.localDepth.paint.descriptor,
       enabled: project.config.localDepth.paint.enabled,
       format: 'relief-forge-depth-paint-int16le',
       file: 'canonical-field.rfdepth',
-    }, null, 2));
+    }, null, 2), fileOptions);
   }
-  zip.file('manifest/assembly-manifest.csv', createAssemblyManifestCsv(project, packing));
-  zip.file('manifest/plate-manifest.csv', createPlateManifestCsv(project, packing));
-  zip.file('manifest/PROJECT-IDENTITY.txt', createPackageIdentityText(project, packing));
+  zip.file('manifest/assembly-manifest.csv', createAssemblyManifestCsv(project, packing), fileOptions);
+  zip.file('manifest/plate-manifest.csv', createPlateManifestCsv(project, packing), fileOptions);
+  zip.file('manifest/PROJECT-IDENTITY.txt', createPackageIdentityText(project, packing), fileOptions);
   zip.file(
     'README.txt',
     createFabricationReadme(project, packing, {
@@ -147,15 +150,18 @@ export async function createFabricationPackageBytes(
       includesLetter: includeLetter,
       stlFormat: 'binary',
     }),
+    fileOptions,
   );
 
   zip.file(
     `3mf/${fullArt3mfFileName(project)}`,
     await createFullArt3mfBytes(project),
+    fileOptions,
   );
   zip.file(
     `stl/${fullArtStlFileName(project)}`,
     binaryStl(serializeFullArtStl(project, 'binary')),
+    fileOptions,
   );
 
   const sortedPlates = [...packing.plates].sort((a, b) => a.index - b.index || a.id.localeCompare(b.id));
@@ -163,10 +169,12 @@ export async function createFabricationPackageBytes(
     zip.file(
       `stl/plates/${plateStlFileName(project, plate)}`,
       binaryStl(serializePackedPlateStl(project, plate, 'binary')),
+      fileOptions,
     );
     zip.file(
       `3mf/plates/${plate3mfFileName(project, plate)}`,
       await createPackedPlate3mfBytes(project, plate),
+      fileOptions,
     );
   }
 
@@ -176,7 +184,7 @@ export async function createFabricationPackageBytes(
   );
   for (const tile of sortedTiles) {
     const path = uniquePartPath(usedPartPaths, tile.colorIndex, tile.color, tile.id);
-    zip.file(path, serializeBinaryStl(tile.mesh, tile.id));
+    zip.file(path, serializeBinaryStl(tile.mesh, tile.id), fileOptions);
   }
 
   return zip.generateAsync({

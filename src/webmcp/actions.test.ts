@@ -1,0 +1,298 @@
+import { describe, expect, it } from "vitest";
+
+import { createWallArtConfig } from "../core/config";
+import { canonicalPhotoSha256 } from "../core/photo-color";
+import type { PhotoFieldAsset } from "../core/types";
+import {
+  assertEmptyToolInput,
+  createWallArtAction,
+  DEFAULT_TOPOGRAPHIC_SEED,
+  DEFAULT_WALL_ART_HEIGHT_MM,
+  inspectFabricationPlanAction,
+  setPrinterBedAction,
+  shapeFabricationPackageResult,
+} from "./actions";
+
+const TOPOGRAPHIC_REQUEST = {
+  preset: "topographic-terraces",
+  width: 36,
+  unit: "in",
+  depthMm: 20,
+} as const;
+
+describe("WebMCP wall-art actions", () => {
+  it("creates the exact 36-inch topographic preset deterministically", () => {
+    const first = createWallArtAction(TOPOGRAPHIC_REQUEST);
+    const second = createWallArtAction(TOPOGRAPHIC_REQUEST);
+
+    expect(first.config.finishedSize).toEqual({
+      widthMm: 914.4,
+      heightMm: DEFAULT_WALL_ART_HEIGHT_MM,
+      lockAspect: false,
+    });
+    expect(first.config.seed).toBe(DEFAULT_TOPOGRAPHIC_SEED);
+    expect(first.project.id).toBe("wall-art-g6-02471088");
+    expect(first.project.widthMm).toBe(914.4);
+    expect(first.project.depthMm).toBe(609.6);
+    expect(first.config.design.family).toBe("contour-relief");
+    expect(first.config.tile.shape).toBe("terraced-panel");
+    expect(first.config.pattern.kind).toBe("noise");
+    expect(first.config.depthProfile.levels).toBe(8);
+    expect(first.summary.objectDepthMm).toMatchObject({
+      configuredRange: {
+        minimum: 2.4,
+        maximum: 20,
+        levelCount: 8,
+      },
+      actualPartThicknessRange: {
+        minimum: 14.971428571428573,
+        maximum: 20,
+      },
+      observedPositiveSurfaceLevels: {
+        minimum: 7.428571428571429,
+        maximum: 20,
+        distinctCount: 5,
+      },
+    });
+    expect(first.summary.partCount).toBe(12);
+    expect(first.project.id).toBe(second.project.id);
+    expect(first.packing).toEqual(second.packing);
+    expect(first.summary.digitalFit).toMatchObject({
+      status: "fits",
+      everyPartPlaced: true,
+      allPartsClosedManifold: true,
+      fullMeshClosedManifold: true,
+      fullMeshOutwardWinding: true,
+    });
+  });
+
+  it("preserves the preset aspect ratio when height is omitted", () => {
+    const result = createWallArtAction({
+      ...TOPOGRAPHIC_REQUEST,
+      width: 18,
+    });
+
+    expect(result.config.finishedSize).toEqual({
+      widthMm: 457.2,
+      heightMm: 304.8,
+      lockAspect: false,
+    });
+  });
+
+  it("preserves palette and printer settings but clears prior composition state", () => {
+    const current = createWallArtConfig({
+      palette: {
+        colors: ["#111111", "#eeeeee"],
+        mode: "checker",
+        reverse: true,
+        offset: 1,
+      },
+      printer: {
+        bedWidthMm: 300,
+        bedDepthMm: 280,
+        marginMm: 6,
+        spacingMm: 3,
+        allowRotate90: false,
+        separateColors: false,
+      },
+      guides: {
+        lines: [{
+          id: "old-guide",
+          points: [{ x: -1, y: 0 }, { x: 1, y: 0 }],
+          closed: false,
+        }],
+      },
+      localDepth: {
+        masks: [{
+          id: "old-mask",
+          name: "Old mask",
+          enabled: true,
+          kind: "circle",
+          strengthMm: 2,
+          center: { x: 0, y: 0 },
+          size: { x: 1, y: 1 },
+          angleDeg: 0,
+          feather: 0.2,
+        }],
+      },
+    });
+
+    const result = createWallArtAction(TOPOGRAPHIC_REQUEST, current);
+
+    expect(result.config.palette).toEqual(current.palette);
+    expect(result.config.printer).toEqual(current.printer);
+    expect(result.config.source).toEqual({ kind: "procedural" });
+    expect(result.config.guides.lines).toEqual([]);
+    expect(result.config.localDepth).toEqual({ masks: [] });
+  });
+
+  it("does not label materially edited geometry as the named preset", () => {
+    const created = createWallArtAction(TOPOGRAPHIC_REQUEST);
+    const edited = inspectFabricationPlanAction(createWallArtConfig({
+      ...created.config,
+      design: { ...created.config.design, variation: 0.5 },
+    }));
+
+    expect(edited.summary.preset).toBe("custom");
+  });
+
+  it("strictly rejects ambiguous, unsupported, and impractical create inputs", () => {
+    expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, width: "36" }))
+      .toThrow(/width must be a finite number/);
+    expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, unit: "feet" }))
+      .toThrow(/unit must be either/);
+    expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, depthMm: 2.99 }))
+      .toThrow(/depthMm must be at least 3/);
+    expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, depthMm: 80.01 }))
+      .toThrow(/depthMm cannot exceed 80/);
+    expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, privatePath: "C:\\secret" }))
+      .toThrow(/unsupported field: privatePath/);
+    expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, seed: "x".repeat(129) }))
+      .toThrow(/at most 128 characters/);
+  });
+
+  it("updates exact printer dimensions without guessing from a model name", () => {
+    const initial = createWallArtAction(TOPOGRAPHIC_REQUEST);
+    const updated = setPrinterBedAction({
+      bedWidthMm: 300,
+      bedDepthMm: 280,
+      marginMm: 8,
+      spacingMm: 3,
+      allowRotate90: false,
+      separateColors: false,
+    }, initial.config);
+
+    expect(updated.config.printer).toEqual({
+      bedWidthMm: 300,
+      bedDepthMm: 280,
+      marginMm: 8,
+      spacingMm: 3,
+      allowRotate90: false,
+      separateColors: false,
+    });
+    expect(updated.project.id).not.toBe(initial.project.id);
+    expect(updated.summary.printerBedMm).toMatchObject({
+      width: 300,
+      depth: 280,
+      usableWidth: 284,
+      usableDepth: 264,
+    });
+    expect(() => setPrinterBedAction({
+      bedWidthMm: 256,
+      bedDepthMm: 256,
+      printerModel: "Bambu X1C",
+    }, initial.config)).toThrow(/unsupported field: printerModel/);
+    expect(() => setPrinterBedAction({
+      bedWidthMm: 79,
+      bedDepthMm: 256,
+    }, initial.config)).toThrow(/bedWidthMm must be at least 80/);
+  });
+
+  it("retains required browser-local photo assets while changing printer settings", () => {
+    const width = 4;
+    const height = 4;
+    const rgba8 = new Uint8Array(width * height * 4).fill(128);
+    const asset: PhotoFieldAsset = {
+      version: 1,
+      width,
+      height,
+      colorSpace: "srgb",
+      rgba8,
+      sha256: canonicalPhotoSha256(width, height, rgba8),
+    };
+    const config = createWallArtConfig({
+      seed: "photo-printer-tool",
+      source: {
+        kind: "photo",
+        photo: {
+          assetSha256: asset.sha256,
+          canonicalWidth: width,
+          canonicalHeight: height,
+          toneMode: "light-raised",
+          toneContrast: 0.5,
+          geometryStrength: 1,
+          directionMode: "off",
+          directionStrength: 0,
+          colorMode: "auto-palette",
+          colorStrength: 1,
+          requestedColorCount: 3,
+        },
+      },
+      design: { family: "sampled-blocks", variation: 0 },
+      grid: { columns: 2, rows: 2, tileSizeMm: 20, gapMm: 2 },
+      tile: { shape: "surface-column", baseHeightMm: 2, reliefHeightMm: 8 },
+      pattern: { kind: "flat" },
+    });
+
+    const result = setPrinterBedAction({
+      bedWidthMm: 256,
+      bedDepthMm: 256,
+      marginMm: 5,
+    }, config, { photoFields: { [asset.sha256]: asset } });
+
+    expect(result.project.sourceAsset?.sha256).toBe(asset.sha256);
+    expect(result.config.printer.marginMm).toBe(5);
+  });
+
+  it("returns an actionable digital-fit warning instead of hiding an oversized part", () => {
+    const created = createWallArtAction({
+      ...TOPOGRAPHIC_REQUEST,
+      width: 36,
+      height: 24,
+    });
+    const result = setPrinterBedAction({
+      bedWidthMm: 80,
+      bedDepthMm: 80,
+      marginMm: 5,
+    }, created.config);
+
+    expect(result.packing).toBeUndefined();
+    expect(result.packingError).toMatchObject({
+      code: "part_exceeds_usable_bed",
+      usableWidthMm: 70,
+      usableDepthMm: 70,
+    });
+    expect(result.summary.digitalFit).toMatchObject({
+      status: "needs_attention",
+      everyPartPlaced: false,
+      placedPartCount: 0,
+      plateCount: 0,
+    });
+    expect(result.summary.warning).toMatch(/Digital geometry and bed-fit checks only/);
+  });
+
+  it("recomputes an inspection and shapes the post-build package result", () => {
+    const created = createWallArtAction(TOPOGRAPHIC_REQUEST);
+    const inspected = inspectFabricationPlanAction(created.config);
+    expect(inspected.summary).toEqual(created.summary);
+
+    const prepared = shapeFabricationPackageResult(inspected, {
+      fileName: `${inspected.project.id}-fabrication-package.zip`,
+      byteLength: 1_234_567,
+      saveLinkReady: true,
+    });
+    expect(prepared).toMatchObject({
+      projectId: inspected.project.id,
+      status: "ready_to_save",
+      byteLength: 1_234_567,
+      saveLinkReady: true,
+    });
+    expect(prepared.nextStep).toMatch(/visible Save file now link/);
+    expect(() => shapeFabricationPackageResult(inspected, {
+      fileName: "invalid/name.zip",
+      byteLength: 100,
+      saveLinkReady: true,
+    })).toThrow(/unsupported characters/);
+    expect(() => shapeFabricationPackageResult(inspected, {
+      fileName: `${inspected.project.id}-fabrication-package.zip`,
+      byteLength: 0,
+      saveLinkReady: true,
+    })).toThrow(/cannot be true when byteLength is zero/);
+  });
+
+  it("rejects unexpected fields for nominally empty tools", () => {
+    expect(() => assertEmptyToolInput({ unexpected: true })).toThrow(/unsupported field/);
+    expect(() => assertEmptyToolInput(null)).toThrow(/must be an object/);
+    expect(() => assertEmptyToolInput({})).not.toThrow();
+  });
+});

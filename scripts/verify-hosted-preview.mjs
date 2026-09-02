@@ -39,6 +39,9 @@ async function requestPath(baseUrl, path, headers = {}) {
     gate: response.headers.get('x-relief-forge-gate'),
     authRecovery: response.headers.get('x-relief-forge-auth-recovery'),
     referrerPolicy: response.headers.get('referrer-policy'),
+    contentSecurityPolicy: response.headers.get('content-security-policy'),
+    contentTypeOptions: response.headers.get('x-content-type-options'),
+    frameOptions: response.headers.get('x-frame-options'),
     body: await response.text(),
   }
 }
@@ -47,6 +50,10 @@ function assertProtectedResponse(response, label) {
   assert(response.cacheControl.includes('no-store'), `${label} response is cacheable.`)
   assert(response.cdnCacheControl.includes('no-store'), `${label} CDN response is cacheable.`)
   assert(response.gate === 'vinext-auth-v1', `${label} response is missing the gate canary.`)
+  assert(response.referrerPolicy === 'no-referrer', `${label} response has an unsafe referrer policy.`)
+  assert(response.contentSecurityPolicy?.includes("frame-ancestors 'none'"), `${label} response allows framing.`)
+  assert(response.contentTypeOptions === 'nosniff', `${label} response is missing nosniff.`)
+  assert(response.frameOptions === 'DENY', `${label} response is missing frame denial.`)
 }
 
 async function waitUntilReady(baseUrl, timeoutMs = 30_000) {
@@ -151,5 +158,10 @@ try {
   throw new Error(`${message}\nHosted preview logs:\n${logs}`)
 } finally {
   await stopChild()
-  await rm(temporaryDirectory, { recursive: true, force: true })
+  await rm(temporaryDirectory, {
+    recursive: true,
+    force: true,
+    maxRetries: 8,
+    retryDelay: 250,
+  })
 }
