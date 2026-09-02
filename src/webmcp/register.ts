@@ -8,7 +8,7 @@ export const RELIEF_FORGE_TOOL_NAMES = [
 export type ReliefForgeToolName = (typeof RELIEF_FORGE_TOOL_NAMES)[number]
 
 export interface CreateWallArtToolInput {
-  preset: 'topographic-terraces'
+  preset: 'topographic-terraces' | 'topographic-mosaic'
   width: number
   height?: number
   unit: 'mm' | 'in'
@@ -74,8 +74,8 @@ export const CREATE_WALL_ART_INPUT_SCHEMA = {
   properties: {
     preset: {
       type: 'string',
-      enum: ['topographic-terraces'],
-      description: 'The deterministic Relief Forge design recipe to apply.',
+      enum: ['topographic-terraces', 'topographic-mosaic'],
+      description: 'The deterministic Relief Forge design recipe to apply. Use topographic-mosaic for a denser 12 by 8 field of smaller panels.',
     },
     width: {
       type: 'number',
@@ -180,7 +180,7 @@ function toolDefinitions(state: SharedRegistration): WebMCPToolDefinition[] {
   return [
     {
       name: 'relief_forge_create_wall_art',
-      description: 'Create or replace the live Relief Forge design using the deterministic topographic-terraces preset, an exact finished size, and a maximum object depth. Updates the visible design and recomputes fabrication geometry.',
+      description: 'Create or replace the live Relief Forge design using a deterministic topographic preset, an exact finished size, and a maximum object depth. Choose topographic-terraces for 12 broad panels or topographic-mosaic for 96 smaller panels with richer contour sampling. Updates the visible design and recomputes fabrication geometry.',
       inputSchema: CREATE_WALL_ART_INPUT_SCHEMA,
       annotations: { readOnlyHint: false },
       execute: (input, options) => dispatchTool(

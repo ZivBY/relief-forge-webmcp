@@ -28,9 +28,9 @@ editor in charge of the artifact.
 
 The motivating request is concrete:
 
-> Make me a 36-inch-wide geometric wall piece inspired by topographic maps,
-> split it into pieces that fit my Bambu printer, make it about 20 mm deep, and
-> export the STLs.
+> Make me a four-foot-wide topographic wall installation with enough small
+> panels to preserve the terrain detail, split it across however many print
+> jobs are needed for my printer, validate the plan, and prepare the files.
 
 That sentence contains units, aesthetic intent, fabrication constraints, and a
 deliverable. The implementation adds an explicit inspection step before
@@ -43,9 +43,10 @@ The integration registers four WebMCP tools designed to let an agent operate
 Relief Forge:
 
 1. `relief_forge_create_wall_art` applies a supported style and exact finished
-   dimensions to the visible design. The challenge preset uses procedural
-   contour-relief geometry, terraced panels, noise, eight configured depth levels, and a
-   4 × 3 grid.
+   dimensions to the visible design. Both named presets use procedural
+   contour-relief geometry, terraced panels, seeded noise, and eight configured
+   depth levels. `topographic-terraces` uses a broad 4 × 3 grid;
+   `topographic-mosaic` uses a denser 12 × 8 grid of 96 smaller panels.
 2. `relief_forge_set_printer_bed` applies explicit full-bed dimensions, edge
    margin, and part spacing to the visible packing plan. The margin is reserved
    inside every bed edge.
@@ -62,20 +63,23 @@ each step and can continue adjusting the same project manually.
 
 ## Reproducible test prompt
 
-> Use Relief Forge to make a 36-inch-wide by 24-inch-tall geometric wall piece
-> inspired by topographic maps, about 20 mm deep. Fit it to a 256 × 256 mm
-> Bambu printer bed with a 5 mm edge margin and 4 mm part spacing. Inspect the
-> fabrication plan and, if every part fits, prepare the fabrication package
-> with the STLs.
+> Use Relief Forge to create a 48-inch-wide by 32-inch-tall topographic-terraces
+> wall piece, 28 mm deep, with deterministic seed `webmcp-showcase-073`. Fit it
+> to a 256 × 256 mm full printer bed with a 5 mm edge margin and 4 mm part
+> spacing, allow 90-degree rotation, and allow colors to share plates. Inspect
+> the plan. If a broad panel is oversized, preserve the exact dimensions,
+> depth, and seed but switch to the topographic-mosaic preset so the artwork has
+> 96 smaller panels with richer contour sampling. Reinspect and prepare the
+> package only if every part fits and the digital mesh checks pass.
 
-The omitted seed resolves to the public demo seed `webmcp-demo-001`. Expected
-facts include a finished field of **914.4 × 609.6 mm**, **12 parts**, eight
-configured terraced levels between **2.4 and 20 mm**, and five distinct positive
-surface heights actually present in this mesh, spanning approximately
-**7.43–20 mm**. Complete part thicknesses are approximately **14.97 or 20 mm**.
-The documented 256 × 256 mm full bed with a 5 mm edge margin leaves a 246 ×
-246 mm usable rectangle and produces **12 print plates**. Compare the result
-with the visible Fabricate panel.
+The first 4 × 3 result is the requested **1219.2 × 812.8 mm**, but its largest
+panel requires approximately **301.8 × 268.5 mm** and cannot fit the **246 ×
+246 mm** usable bed. The corrected `topographic-mosaic` result preserves the
+finished size, depth, and seed while changing only the partition to a **12 ×
+8** grid. Its **96** approximately 100.4 mm panels fit four per plate and
+produce **24 print plates** when colors may share a plate. The recipe configures
+eight terraced levels between **2.4 and 28 mm**; seven distinct positive surface
+heights occur across the full range.
 
 ## How it was built
 
@@ -105,20 +109,16 @@ feedback endpoint, analytics, application database, or remote project storage.
 
 ## Verification evidence
 
-The exact journey above was run five times from cleared browser storage through
-a standards-shaped `document.modelContext` harness. Every run produced project
-`wall-art-g6-02471088`, 12 parts, 12 plates, and the same 1,032,212-byte ZIP
-with SHA-256
-`f43610d9ed0486a23d2b2e127d6943ae0988100faa65bf692d572f875097bc89`.
-This harness verifies registration, tool dispatch, visible state updates, and
-the generated browser artifact. On September 2, 2026, Codex's in-app browser
-discovered and executed all four WebMCP tools against the live deployment. The
-visible project, fit result, and prepared package matched the harness evidence
-above, and the browser console reported no warnings or errors.
+The exact dense showcase produces project `wall-art-g6-94007cdc`, 96 parts, 24
+plates, and a 6,256,191-byte ZIP with SHA-256
+`076d8fd0581a68cb7abcf91faee66a6741e95f609db51b15b1eeab55bdab8475`.
+Automated action tests reproduce the same project identity and packing plan.
+The live deployment is rechecked after every release so the visible project,
+tool result, and prepared browser artifact can be compared with this evidence.
 
-The saved ZIP contains 12 per-part STLs, 12 packed-plate STLs, one aligned
-full-art STL, 13 3MF files, three assembly PDFs, a project recipe, and matching
-12-row assembly and plate manifests. An exact binary inspection found finite,
+The saved ZIP contains 96 per-part STLs, 24 packed-plate STLs, one aligned
+full-art STL, 25 3MF files, three assembly PDFs, a project recipe, and matching
+assembly and plate manifests. An exact binary inspection found finite,
 closed, positive-volume STL shells and kept every packed plate inside the
 configured 256 × 256 mm full-bed envelope. These are digital checks, not a
 physical-print certification.

@@ -11,6 +11,7 @@ import {
   inspectFabricationPlanAction,
   setPrinterBedAction,
   shapeFabricationPackageResult,
+  TOPOGRAPHIC_MOSAIC_PRESET,
 } from "./actions";
 
 const TOPOGRAPHIC_REQUEST = {
@@ -18,6 +19,15 @@ const TOPOGRAPHIC_REQUEST = {
   width: 36,
   unit: "in",
   depthMm: 20,
+} as const;
+
+const TOPOGRAPHIC_MOSAIC_REQUEST = {
+  preset: TOPOGRAPHIC_MOSAIC_PRESET,
+  width: 48,
+  height: 32,
+  unit: "in",
+  depthMm: 28,
+  seed: "webmcp-showcase-073",
 } as const;
 
 describe("WebMCP wall-art actions", () => {
@@ -76,6 +86,110 @@ describe("WebMCP wall-art actions", () => {
       widthMm: 457.2,
       heightMm: 304.8,
       lockAspect: false,
+    });
+  });
+
+  it("creates the dense 96-panel topographic mosaic deterministically", () => {
+    const first = createWallArtAction(TOPOGRAPHIC_MOSAIC_REQUEST);
+    const second = createWallArtAction(TOPOGRAPHIC_MOSAIC_REQUEST);
+
+    expect(first.config.finishedSize).toEqual({
+      widthMm: 1219.2,
+      heightMm: 812.8,
+      lockAspect: false,
+    });
+    expect(first.config.grid).toEqual({
+      columns: 12,
+      rows: 8,
+      tileSizeMm: 150,
+      gapMm: 2,
+    });
+    expect(first.summary.preset).toBe(TOPOGRAPHIC_MOSAIC_PRESET);
+    expect(first.summary.partCount).toBe(96);
+    expect(first.project.id).toBe("wall-art-g6-c67b786a");
+    expect(first.project.id).toBe(second.project.id);
+    expect(first.packing).toEqual(second.packing);
+    expect(first.summary.objectDepthMm).toMatchObject({
+      configuredRange: {
+        minimum: 2.4,
+        maximum: 28,
+        levelCount: 8,
+      },
+      actualPartThicknessRange: {
+        minimum: 9.714285714285714,
+        maximum: 28,
+      },
+      observedPositiveSurfaceLevels: {
+        minimum: 2.4,
+        maximum: 28,
+        distinctCount: 7,
+      },
+    });
+    expect(first.summary.digitalFit).toMatchObject({
+      status: "fits",
+      placedPartCount: 96,
+      plateCount: 26,
+      everyPartPlaced: true,
+      allPartsClosedManifold: true,
+      fullMeshClosedManifold: true,
+      fullMeshOutwardWinding: true,
+    });
+  });
+
+  it("packs the dense showcase as 24 full mixed-color plates", () => {
+    const created = createWallArtAction(TOPOGRAPHIC_MOSAIC_REQUEST);
+    const packed = setPrinterBedAction({
+      bedWidthMm: 256,
+      bedDepthMm: 256,
+      marginMm: 5,
+      spacingMm: 4,
+      allowRotate90: true,
+      separateColors: false,
+    }, created.config);
+
+    expect(packed.project.id).toBe("wall-art-g6-94007cdc");
+    expect(packed.summary.digitalFit).toMatchObject({
+      status: "fits",
+      placedPartCount: 96,
+      plateCount: 24,
+      everyPartPlaced: true,
+    });
+    expect(packed.packing?.plates).toHaveLength(24);
+    expect(packed.packing?.plates.every((plate) => plate.placements.length === 4))
+      .toBe(true);
+  });
+
+  it("lets the showcase preserve its size by replacing oversized broad panels", () => {
+    const broad = createWallArtAction({
+      ...TOPOGRAPHIC_MOSAIC_REQUEST,
+      preset: "topographic-terraces",
+    });
+
+    expect(broad.project.id).toBe("wall-art-g6-490aa8d6");
+    expect(broad.packing).toBeUndefined();
+    expect(broad.packingError).toMatchObject({
+      code: "part_exceeds_usable_bed",
+      usableWidthMm: 246,
+      usableDepthMm: 246,
+    });
+    expect(broad.packingError?.requiredWidthMm).toBeCloseTo(301.782, 3);
+    expect(broad.packingError?.requiredDepthMm).toBeCloseTo(268.546, 3);
+
+    const mosaic = setPrinterBedAction({
+      bedWidthMm: 256,
+      bedDepthMm: 256,
+      marginMm: 5,
+      spacingMm: 4,
+      allowRotate90: true,
+      separateColors: false,
+    }, createWallArtAction(TOPOGRAPHIC_MOSAIC_REQUEST).config);
+
+    expect(mosaic.summary.finishedSizeMm).toEqual(broad.summary.finishedSizeMm);
+    expect(mosaic.summary.partCount).toBe(96);
+    expect(mosaic.summary.digitalFit).toMatchObject({
+      status: "fits",
+      placedPartCount: 96,
+      plateCount: 24,
     });
   });
 
@@ -141,6 +255,8 @@ describe("WebMCP wall-art actions", () => {
       .toThrow(/width must be a finite number/);
     expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, unit: "feet" }))
       .toThrow(/unit must be either/);
+    expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, preset: "unknown" }))
+      .toThrow(/preset must be topographic-terraces or topographic-mosaic/);
     expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, depthMm: 2.99 }))
       .toThrow(/depthMm must be at least 3/);
     expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, depthMm: 80.01 }))
