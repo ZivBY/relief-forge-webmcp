@@ -1,154 +1,175 @@
 # Relief Forge WebMCP demo script
 
-Target length: **2 minutes 30 seconds**. Maximum permitted length: **under 3
-minutes**. Record in English with audible narration.
+Target length: **2 minutes 47 seconds**. Hard cap: **2 minutes 55 seconds**.
+Record in English with prominent narration and burned-in captions.
 
 ## Reproducible prompt
 
 Use this exact prompt on camera:
 
-> Use Relief Forge to make a 36-inch-wide by 24-inch-tall geometric wall piece
-> inspired by topographic maps, about 20 mm deep. Fit it to a 256 × 256 mm
-> Bambu printer bed with a 5 mm edge margin and 4 mm part spacing. Inspect the
-> fabrication plan and, if every part fits, prepare the fabrication package
-> with the STLs.
+> Use Relief Forge to create a 48-inch-wide by 32-inch-tall topographic-terraces
+> wall piece, 28 mm deep, with deterministic seed `webmcp-showcase-073`. Fit it
+> to a 256 × 256 mm full printer bed with a 5 mm edge margin and 4 mm part
+> spacing, allow 90-degree rotation, and allow colors to share plates. Inspect
+> the plan. If a broad panel is oversized, preserve the exact dimensions,
+> depth, and seed but switch to the topographic-mosaic preset so the artwork has
+> 96 smaller panels with richer contour sampling. Reinspect and prepare the
+> package only if every part fits and the digital mesh checks pass.
 
-The prompt removes two demo-breaking ambiguities: it provides a finished height
-and the printer's full bed measurements. The omitted seed resolves to the public
-demo seed `webmcp-demo-001`. The expected field is 914.4 × 609.6 mm and has 12
-parts. The recipe configures eight possible terraced levels from 2.4 to 20 mm;
-this mesh actually contains five distinct positive surface heights spanning
-approximately 7.43–20 mm, while complete part thicknesses are approximately
-14.97 or 20 mm. After the 5 mm edge margin, the 256 mm bed leaves a 246 × 246 mm
-usable rectangle and yields 12 plates.
+Expected progression:
+
+1. `topographic-terraces` creates project `wall-art-g6-490aa8d6`, but its
+   largest broad panel requires approximately 301.8 × 268.5 mm against a 246 ×
+   246 mm usable bed.
+2. `topographic-mosaic` preserves the 1219.2 × 812.8 mm finished artwork, 28 mm
+   maximum depth, and seed while repartitioning it into a 12 × 8 field.
+3. The final project `wall-art-g6-94007cdc` places all 96 parts across 24
+   mixed-color plates, four parts per plate.
+4. The 6,256,191-byte package has SHA-256
+   `076d8fd0581a68cb7abcf91faee66a6741e95f609db51b15b1eeab55bdab8475`.
 
 ## Before recording
 
-- Use the final deployed commit and the live URL from the submission.
-- Sign in to ChatGPT, open Relief Forge as a top-level page, and start from a
-  fresh project.
-- Use a supported WebMCP agent context and confirm the four tools are available.
-- Set browser zoom so the editor, agent conversation, and tool status remain
-  readable at the recording resolution.
-- Close notifications and remove names, email addresses, tokens, file paths,
-  bookmarks, and unrelated tabs from the frame.
-- Perform one complete rehearsal and confirm the generated ZIP opens.
-- Record system audio or narration audio, not a silent screen capture.
+- Use the final deployed commit and submitted live-app URL, never localhost.
+- Open Relief Forge as a top-level page in a supported agent context and begin
+  from a fresh project.
+- Confirm all four WebMCP tools are available.
+- Frame only the agent, live app, package inventory, and public project links.
+- Hide names, email addresses, tokens, private URLs, bookmarks, notifications,
+  downloads, and unrelated tabs.
+- Complete one rehearsal and confirm the generated ZIP opens.
+- Keep narration clearly above interface sound and burn in readable captions.
 - Do not show private repository history, the original private deployment, or
   tester feedback.
 
 ## Shot and narration plan
 
-### 0:00–0:15 — Problem and product
+### 0:00–0:08 — Start with the tangible result
 
-**Screen:** Relief Forge editor with its model preview and fabrication workflow
-visible.
+**Screen:** Moving close-up of the dense final relief. Overlay: `48 × 32 inches
+· 96 parts · 24 plates`.
 
-**Narration:** “Relief Forge is a deterministic studio for modular 3D-printable
-wall art. For this challenge, I exposed four useful application actions as
-WebMCP tools, so an agent can build and inspect a real fabrication plan instead
-of imitating clicks.”
+**Narration:** “Most AI design demos end with an image. Relief Forge ends with
+96 printable parts, a verified plate plan, and fabrication files.”
 
-### 0:15–0:30 — One manufacturing request
+### 0:08–0:21 — Introduce the tools
 
-**Screen:** Paste and send the exact reproducible prompt.
+**Screen:** Agent and Relief Forge side by side; show the four exact tool names.
 
-**Narration:** “This request combines aesthetic intent with exact size, object
-depth, printer constraints, validation, and a requested deliverable.”
+**Narration:** “We added four WebMCP tools to the existing deterministic browser
+app: create a design, configure the printer envelope, inspect the manufacturing
+plan, and prepare the package. The agent operates the same visible project a
+person can still edit.”
 
-### 0:30–0:55 — Create the visible design
+### 0:21–0:39 — Send the demanding request
 
-**Expected tool:** `relief_forge_create_wall_art`
+**Screen:** Show and send the complete prompt.
 
-**Screen:** Keep the tool call and editor visible. Show the topographic-inspired
-geometry appear and the finished-size readout update.
+**Narration:** “The request is deliberately demanding: a 48 by 32 inch
+topographic wall piece, 28 millimetres deep, with a fixed seed; fit it to a 256
+millimetre bed with 5 millimetre margins and 4 millimetre spacing. If broad
+panels fail, preserve the exact design and repartition it.”
 
-**Narration:** “The first tool maps ‘topographic maps’ to a named, deterministic
-Relief Forge style: procedural contour relief, terraced panels, and an
-eight-level depth quantization. It builds a 914.4 by 609.6 millimetre field
-with 12 parts and updates
-the same project a person can edit.”
+### 0:39–0:57 — Create the broad version
 
-### 0:55–1:15 — Configure the printer envelope
+**Expected tools:** `relief_forge_create_wall_art`, then
+`relief_forge_set_printer_bed`.
 
-**Expected tool:** `relief_forge_set_printer_bed`
+**Screen:** Show the 4 × 3 model appear, then the exact printer values.
 
-**Screen:** Show 256 × 256 mm, 5 mm edge margin, and 4 mm spacing in the
-Fabricate controls. Briefly show the plate preview.
+**Narration:** “The create tool first maps the prompt to 12 broad topographic
+terraces. Relief Forge generates the exact 1219.2 by 812.8 millimetre field in
+the visible editor. The printer tool applies explicit bed dimensions and
+clearances, without guessing from a printer name.”
 
-**Narration:** “Printer fit is not guessed from a brand name. The second tool
-sets the explicit full bed dimensions, safety margin, and spacing, then Relief Forge
-re-runs its deterministic packing.”
+### 0:57–1:15 — Catch the real constraint
 
-### 1:15–1:40 — Inspect before exporting
+**Expected tool:** `relief_forge_inspect_fabrication_plan`.
 
-**Expected tool:** `relief_forge_inspect_fabrication_plan`
+**Screen:** Show the structured failure beside the visible blocked export.
+Highlight required 301.8 × 268.5 mm and usable 246 × 246 mm.
 
-**Screen:** Show the agent's structured summary beside the editor's matching
-finished dimensions, part/plate summary, and digital checks.
+**Narration:** “Inspection returns a structured constraint: the largest panel
+is about 301.8 by 268.5 millimetres, larger than the 246 millimetre usable bed.
+The mesh itself is closed, but the part does not fit, so export remains
+blocked.”
 
-**Narration:** “The read-only inspection tool reports the current project
-identity, measurements, parts, plates, and digital geometry and packing status.
-The agent can verify the visible result before it asks for files.”
+### 1:15–1:39 — Preserve the art; make the pieces smaller
 
-The preset's part count is 12 and the documented printer envelope produces 12
-plates. Read both from the inspected result and confirm them in the Fabricate
-panel during the recording.
+**Expected tool:** `relief_forge_create_wall_art` with
+`preset: topographic-mosaic`, followed by the printer settings.
 
-### 1:40–2:05 — Prepare the package
+**Screen:** Show the live transition from 12 broad slabs to the dense 12 × 8
+field. Orbit close enough to reveal the richer terraces, then show assembly IDs.
 
-**Expected tool:** `relief_forge_prepare_fabrication_package`
+**Narration:** “The agent now uses that failure as data. It keeps the size,
+depth, seed, and artwork, but calls the same create tool with the
+topographic-mosaic preset. Relief Forge repartitions the piece into a 12-by-8
+grid: 96 smaller panels with richer contour sampling.”
 
-**Screen:** Show package preparation finish and the visible download control
-become ready. Click it yourself and open the downloaded ZIP file list.
+### 1:39–2:00 — Verify the repaired plan
 
-**Narration:** “The final tool packages only the current validated snapshot. It
-prepares the fabrication ZIP, while the reviewer keeps control of the browser
-download. The package includes per-part printable files and the documentation
-needed to reconstruct and inspect the build.”
+**Expected tool:** `relief_forge_inspect_fabrication_plan`.
 
-Only name file types that are visibly present in the final ZIP. Keep the file
-list on screen long enough to read at least two STL filenames and the manifest.
+**Screen:** Show 1219.2 × 812.8 mm, 96/96, 24 plates, and the green checks.
+Cycle from plate 1 to plate 12 to plate 24.
 
-### 2:05–2:25 — Why WebMCP matters
+**Narration:** “A second inspection confirms the full 48 by 32 inch design is
+unchanged. All 96 parts are placed across 24 print plates. Every part is closed,
+and the assembled reference is closed and outward-wound. These are digital
+checks, not a claim of physical print performance.”
 
-**Screen:** Return to the model and plate preview; optionally make one manual
-selection to show the editor remains interactive.
+### 2:00–2:28 — Prepare and inspect the package
 
-**Narration:** “This is not a chatbot bolted onto a website. WebMCP gives the
-agent four constrained capabilities while deterministic local code remains
-responsible for geometry, packing, and exports. Agent actions and manual edits
-share one visible source of truth.”
+**Expected tool:** `relief_forge_prepare_fabrication_package`.
 
-### 2:25–2:30 — Close
+**Screen:** Show completion and the visible **Save file now** link. The reviewer
+uses it, then opens the ZIP inventory to show part STLs, plate STLs, 3MF files,
+PDFs, recipe, and manifests.
 
-**Screen:** Project name, public repository URL, and live URL.
+**Narration:** “Only then does the final tool build the exact validated
+snapshot. The 6.26 megabyte ZIP contains 96 part STLs, 24 packed-plate STLs, 25
+3MF files, three assembly PDFs, the editable project recipe, and matching
+manifests. The agent prepares it; the reviewer clicks the visible Save link.”
 
-**Narration:** “Relief Forge: from one manufacturing request to an inspectable,
-printable wall-art package.”
+### 2:28–2:47 — Explain the WebMCP difference
 
-## One-take acceptance checklist
+**Screen:** Return through model, assembly, and plate views, then end on the
+public live-app and repository URLs.
 
-- Total duration is below 3:00 and narration is intelligible.
-- The URL bar shows the submitted live app, not localhost.
-- All four exact tool names appear in order.
-- The design visibly changes after the creation tool.
+**Narration:** “That is the WebMCP difference. The agent gets a small, typed
+manufacturing vocabulary; Relief Forge stays responsible for deterministic
+geometry, stable identifiers, packing, validation, and exports. One prompt
+becomes a caught constraint, a repaired plan, and files ready for the
+workshop.”
+
+## Acceptance checklist
+
+- Total duration is below 2:55; narration is clearly audible throughout.
+- The submitted live-app URL is visible, never localhost.
+- All four exact tool names appear in the real agent flow.
+- The first inspection visibly fails because the broad panel exceeds the bed.
+- The finished dimensions, depth, and seed remain unchanged after repair.
+- The model visibly changes from a 4 × 3 field to a 12 × 8, 96-part field.
 - The printer values visibly match 256 × 256, 5, and 4 mm.
-- The inspection result and Fabricate panel agree.
-- The prepared download comes from the same final project revision.
-- At least two STL filenames and the manifest are readable in the ZIP.
+- Plate 1, a middle plate, and plate 24 are shown.
+- Final inspection and the Fabricate panel agree on project, dimensions,
+  parts, plates, and digital checks.
+- The prepared download belongs to the same final project revision.
+- Part STLs, plate STLs, a 3MF, an assembly PDF, and a manifest are readable in
+  the ZIP inventory.
 - No personal information, private URLs, credentials, notifications, or tester
   data appear.
 - The ending frame shows the public repository and live app.
 
 ## Claims to avoid
 
-- Do not say the print is physically proven unless the demonstrated package was
-  actually printed and measured.
-- Do not call a brand name a verified printer profile; the demo uses an explicit
-  rectangular bed envelope.
+- Do not say the design has been physically printed or proven unless that exact
+  package is printed and measured.
+- Do not call a brand name a verified printer profile; the demo uses an
+  explicit rectangular bed envelope.
 - Do not say access is judge-only. It is ChatGPT-sign-in-gated, not allowlisted.
-- Do not claim the agent downloaded files automatically; it prepared the
-  package and the reviewer clicked download.
+- Do not claim the agent downloaded files automatically. It prepared the
+  package and the reviewer initiated the final download.
 - Do not imply WebMCP generated the mesh. Relief Forge's deterministic geometry
   engine did.

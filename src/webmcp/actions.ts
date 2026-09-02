@@ -22,6 +22,7 @@ import type {
 
 export const INCH_TO_MM = 25.4;
 export const TOPOGRAPHIC_TERRACES_PRESET = "topographic-terraces" as const;
+export const TOPOGRAPHIC_MOSAIC_PRESET = "topographic-mosaic" as const;
 export const MIN_OBJECT_DEPTH_MM = 3;
 export const MAX_OBJECT_DEPTH_MM = 80;
 export const DEFAULT_WALL_ART_HEIGHT_MM = 609.6;
@@ -31,9 +32,12 @@ export const DEFAULT_TOPOGRAPHIC_SEED = "webmcp-demo-001";
 type PlainRecord = Record<string, unknown>;
 
 export type WallArtLengthUnit = "mm" | "in";
+export type TopographicPreset =
+  | typeof TOPOGRAPHIC_TERRACES_PRESET
+  | typeof TOPOGRAPHIC_MOSAIC_PRESET;
 
 export interface CreateWallArtActionInput {
-  preset: typeof TOPOGRAPHIC_TERRACES_PRESET;
+  preset: TopographicPreset;
   width: number;
   height?: number;
   unit: WallArtLengthUnit;
@@ -62,7 +66,7 @@ export interface PackingFailure {
 
 export interface FabricationPlanSummary {
   projectId: string;
-  preset: typeof TOPOGRAPHIC_TERRACES_PRESET | "custom";
+  preset: TopographicPreset | "custom";
   finishedSizeMm: {
     width: number;
     height: number;
@@ -206,8 +210,13 @@ function parseCreateWallArtInput(input: unknown): CreateWallArtActionInput {
     "seed",
   ]);
 
-  if (input.preset !== TOPOGRAPHIC_TERRACES_PRESET) {
-    throw new Error(`preset must be ${TOPOGRAPHIC_TERRACES_PRESET}.`);
+  if (
+    input.preset !== TOPOGRAPHIC_TERRACES_PRESET &&
+    input.preset !== TOPOGRAPHIC_MOSAIC_PRESET
+  ) {
+    throw new Error(
+      `preset must be ${TOPOGRAPHIC_TERRACES_PRESET} or ${TOPOGRAPHIC_MOSAIC_PRESET}.`,
+    );
   }
   if (input.unit !== "mm" && input.unit !== "in") {
     throw new Error('unit must be either "mm" or "in".');
@@ -309,7 +318,7 @@ function packProject(project: WallArtProject): {
   }
 }
 
-function isTopographicTerraces(config: WallArtConfig): boolean {
+function hasTopographicRecipe(config: WallArtConfig): boolean {
   return (
     config.source.kind === "procedural" &&
     config.design.family === "contour-relief" &&
@@ -317,8 +326,6 @@ function isTopographicTerraces(config: WallArtConfig): boolean {
     config.design.variation === 0.42 &&
     config.design.symmetry === 8 &&
     config.design.surfaceResolution === 20 &&
-    config.grid.columns === 4 &&
-    config.grid.rows === 3 &&
     config.grid.tileSizeMm === 150 &&
     config.grid.gapMm === 2 &&
     config.tile.shape === "terraced-panel" &&
@@ -347,6 +354,17 @@ function isTopographicTerraces(config: WallArtConfig): boolean {
   );
 }
 
+function identifyTopographicPreset(config: WallArtConfig): TopographicPreset | "custom" {
+  if (!hasTopographicRecipe(config)) return "custom";
+  if (config.grid.columns === 4 && config.grid.rows === 3) {
+    return TOPOGRAPHIC_TERRACES_PRESET;
+  }
+  if (config.grid.columns === 12 && config.grid.rows === 8) {
+    return TOPOGRAPHIC_MOSAIC_PRESET;
+  }
+  return "custom";
+}
+
 export function summarizeFabricationPlan(
   project: WallArtProject,
   packing?: PackingResult,
@@ -369,9 +387,7 @@ export function summarizeFabricationPlan(
 
   return {
     projectId: project.id,
-    preset: isTopographicTerraces(project.config)
-      ? TOPOGRAPHIC_TERRACES_PRESET
-      : "custom",
+    preset: identifyTopographicPreset(project.config),
     finishedSizeMm: {
       width: project.widthMm,
       height: project.depthMm,
@@ -436,7 +452,7 @@ function buildActionResult(
 }
 
 /**
- * Build the challenge's deterministic topographic preset while retaining only
+ * Build one of the challenge's deterministic topographic presets while retaining only
  * the user's current palette and exact printer-bed settings.
  */
 export function createWallArtAction(
@@ -456,6 +472,9 @@ export function createWallArtAction(
     DEFAULT_WALL_ART_CONFIG.tile.baseHeightMm,
     parsed.depthMm,
   );
+  const grid = parsed.preset === TOPOGRAPHIC_MOSAIC_PRESET
+    ? { columns: 12, rows: 8, tileSizeMm: 150, gapMm: 2 }
+    : { columns: 4, rows: 3, tileSizeMm: 150, gapMm: 2 };
 
   const config = createWallArtConfig({
     seed: parsed.seed ?? DEFAULT_TOPOGRAPHIC_SEED,
@@ -468,12 +487,7 @@ export function createWallArtAction(
       symmetry: 8,
       surfaceResolution: 20,
     },
-    grid: {
-      columns: 4,
-      rows: 3,
-      tileSizeMm: 150,
-      gapMm: 2,
-    },
+    grid,
     tile: {
       shape: "terraced-panel",
       baseHeightMm,

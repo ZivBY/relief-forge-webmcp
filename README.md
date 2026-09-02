@@ -19,12 +19,12 @@ fabrication plan:
 
 Relief Forge exposes those actions as four narrow WebMCP tools:
 
-| Tool | Purpose |
-| --- | --- |
-| `relief_forge_create_wall_art` | Create a supported wall-art composition at explicit finished dimensions and depth; the challenge preset is a 4 × 3, 12-part terraced contour relief. |
-| `relief_forge_set_printer_bed` | Set the full rectangular printer-bed dimensions, edge margin, and part spacing. |
-| `relief_forge_inspect_fabrication_plan` | Read the current project's dimensions, parts, plates, and digital geometry/packing checks. |
-| `relief_forge_prepare_fabrication_package` | Build the fabrication package for the current project after its digital checks pass and expose the user-initiated download in the editor. |
+| Tool                                       | Purpose                                                                                                                                                                                                     |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `relief_forge_create_wall_art`             | Create a supported wall-art composition at explicit finished dimensions and depth. `topographic-terraces` makes a broad 4 × 3 field; `topographic-mosaic` makes a denser 12 × 8 field of 96 smaller panels. |
+| `relief_forge_set_printer_bed`             | Set the full rectangular printer-bed dimensions, edge margin, and part spacing.                                                                                                                             |
+| `relief_forge_inspect_fabrication_plan`    | Read the current project's dimensions, parts, plates, and digital geometry/packing checks.                                                                                                                  |
+| `relief_forge_prepare_fabrication_package` | Build the fabrication package for the current project after its digital checks pass and expose the user-initiated download in the editor.                                                                   |
 
 Every tool updates or reads the same state shown in the application. The
 integration does not create a second, hidden design system and does not use a
@@ -35,23 +35,26 @@ language model to invent mesh geometry.
 Use the hosted app as a top-level page in a WebMCP-capable agent context, then
 send:
 
-> Use Relief Forge to make a 36-inch-wide by 24-inch-tall geometric wall piece
-> inspired by topographic maps, about 20 mm deep. Fit it to a 256 × 256 mm
-> Bambu printer bed with a 5 mm edge margin and 4 mm part spacing. Inspect the
-> fabrication plan and, if every part fits, prepare the fabrication package
-> with the STLs.
+> Use Relief Forge to create a 48-inch-wide by 32-inch-tall topographic-terraces
+> wall piece, 28 mm deep, with deterministic seed `webmcp-showcase-073`. Fit it
+> to a 256 × 256 mm full printer bed with a 5 mm edge margin and 4 mm part
+> spacing, allow 90-degree rotation, and allow colors to share plates. Inspect
+> the plan. If a broad panel is oversized, preserve the exact dimensions,
+> depth, and seed but switch to the topographic-mosaic preset so the artwork has
+> 96 smaller panels with richer contour sampling. Reinspect and prepare the
+> package only if every part fits and the digital mesh checks pass.
 
 The explicit bed measurements make this prompt reproducible; “a Bambu printer”
 alone is ambiguous because different models and build-plate profiles can have
 different usable areas.
 
-With the default public demo seed (`webmcp-demo-001`), the expected finished
-field is 914.4 × 609.6 mm with 12 parts. The recipe configures eight possible
-terraced levels between 2.4 and 20 mm; this generated mesh actually contains
-five distinct positive surface heights spanning approximately 7.43–20 mm,
-while complete part thicknesses are approximately 14.97 or 20 mm. With a 256 × 256 mm
-full bed, 5 mm edge margin (246 × 246 mm remaining), and 4 mm spacing, the
-verified result is 12 print plates.
+The first 4 × 3 result is the requested 1219.2 × 812.8 mm, but a broad panel
+requires approximately 301.8 × 268.5 mm and cannot fit the 246 × 246 mm usable
+bed. The corrected preset preserves the finished size, depth, and seed while
+changing only the partition to a 12 × 8 grid. Its 96 approximately 100.4 mm
+panels fit four per plate, producing 24 print plates when colors may share a
+plate. The recipe configures eight possible terraced levels between 2.4 and 28
+mm; seven distinct positive surface heights occur across the full range.
 
 ## Existing application and challenge extension
 
@@ -68,7 +71,7 @@ available in the
 comparison.
 
 The challenge work adds the four imperative WebMCP tools, tool lifecycle and
-validation coverage, a deterministic “topographic maps” style mapping, a
+validation coverage, two deterministic “topographic maps” style mappings, a
 visible agent-action status surface, and a separate sign-in-gated deployment.
 It does not replace the geometry or packing algorithms.
 
