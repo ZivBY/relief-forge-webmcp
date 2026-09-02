@@ -1,0 +1,34 @@
+node_modules/
+dist/
+.next/
+output/
+.playwright-cli/
+result.json
+scripts/__pycache__/
+*.pyc
+*.log
+.DS_Store
+Thumbs.db
+
+# Local/editor/build state
+.env*
+!.env.example
+.idea/
+.vscode/
+.vite/
+.vinext/
+.wrangler/
+.dev.vars*
+!.dev.vars.example
+coverage/
+tmp/
+*.tsbuildinfo
+
+# Raw third-party research material is intentionally kept out of Git history.
+research/paragami-catalog.json
+research/screenshots/paragami-catalog-reference.png
+research/screenshots/pdf-final/reference-paragami-template.png
+
+# Keep only the current V2 visual evidence; superseded captures remain local.
+research/screenshots/v2/*.png
+!research/screenshots/v2/current-*.png

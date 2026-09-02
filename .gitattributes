@@ -1,0 +1,13 @@
+* text=auto eol=lf
+
+# Windows launcher remains directly double-clickable.
+*.cmd text eol=crlf
+
+# Preserve binary evidence exactly.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+*.stl binary
+*.3mf binary
+*.zip binary

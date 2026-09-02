@@ -1,0 +1,62 @@
+{
+  "name": "relief-forge-webmcp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Deterministic tool for designing modular 3D-printable wall art and exporting fabrication packages.",
+  "license": "MIT",
+  "packageManager": "npm@11.12.1",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZivBY/relief-forge-webmcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ZivBY/relief-forge-webmcp/issues"
+  },
+  "homepage": "https://github.com/ZivBY/relief-forge-webmcp#readme",
+  "type": "module",
+  "scripts": {
+    "dev": "vinext dev",
+    "prebuild": "node scripts/clean-dist.mjs",
+    "typecheck": "vinext typegen && tsc --noEmit -p tsconfig.json",
+    "build": "npm run typecheck && vinext build",
+    "prebuild:hosted": "node scripts/validate-hosted-build.mjs",
+    "build:hosted": "npm run build && npm run smoke:hosted",
+    "postbuild": "node scripts/sanitize-dist.mjs",
+    "smoke:hosted": "node scripts/verify-hosted-preview.mjs",
+    "audit:prod": "npm audit --omit=dev",
+    "github:check": "node scripts/check-github-sync.mjs",
+    "preview": "node scripts/run-preview.mjs",
+    "sample": "node scripts/generate-sample.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "npm run test && npm run build"
+  },
+  "dependencies": {
+    "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-server-dom-webpack": "19.2.8",
+    "three": "^0.185.1",
+    "vinext": "1.0.0-beta.8"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.53.1",
+    "@openai/sites-vite-plugin": "^0.2.0",
+    "@types/node": "^24.10.13",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@types/three": "^0.185.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "@vitejs/plugin-rsc": "0.5.34",
+    "miniflare": "5.20260820.0-alpha",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.125.0"
+  }
+}

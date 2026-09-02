@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a focused workflow or fabrication improvement.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: What is difficult or impossible today?
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Proposed workflow
+      description: Explain the desired interaction without prescribing unnecessary implementation details.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Geometry and fabrication impact
+      description: Note any effect on identity, schema, exports, slicer behavior, or physical validation.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable outcomes that would make this complete.
+    validations:
+      required: true
