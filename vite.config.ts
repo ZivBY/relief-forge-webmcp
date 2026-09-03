@@ -12,9 +12,15 @@ export default defineConfig(async ({ mode }) => {
   process.env.WRANGLER_LOG_PATH ??= '.wrangler/logs'
   process.env.MINIFLARE_REGISTRY_PATH ??= '.wrangler/registry'
 
+  const buildCommit = process.env.VITE_RELIEF_FORGE_COMMIT?.trim() ?? ''
+  const buildDefines = {
+    __RELIEF_FORGE_COMMIT__: JSON.stringify(buildCommit),
+  }
+
   if (mode === 'test') {
     const { default: react } = await import('@vitejs/plugin-react')
     return {
+      define: buildDefines,
       plugins: [react()],
       test: {
         // Local generated output and isolated Codex worktrees can contain
@@ -33,6 +39,7 @@ export default defineConfig(async ({ mode }) => {
   const { cloudflare } = await import('@cloudflare/vite-plugin')
 
   return {
+    define: buildDefines,
     server: {
       port: 4173,
       strictPort: true,

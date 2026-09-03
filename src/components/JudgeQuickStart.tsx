@@ -16,6 +16,8 @@ interface JudgeQuickStartCardProps {
   copyState: QuickStartCopyState
   onCopy: () => void
   onDismiss: () => void
+  promptOpen?: boolean
+  onPromptOpenChange?: (open: boolean) => void
 }
 
 interface QuickStartStep {
@@ -128,6 +130,8 @@ export function JudgeQuickStartCard({
   copyState,
   onCopy,
   onDismiss,
+  promptOpen = copyState !== 'idle',
+  onPromptOpenChange,
 }: JudgeQuickStartCardProps) {
   const promptDestination = PROMPT_DESTINATION_COPY[agentToolsState]
   const copyAction = COPY_ACTION_COPY[agentToolsState]
@@ -212,7 +216,11 @@ export function JudgeQuickStartCard({
         ))}
       </ol>
 
-      <details className="judge-quick-start__prompt" open={copyState !== 'idle'}>
+      <details
+        className="judge-quick-start__prompt"
+        open={promptOpen}
+        onToggle={(event) => onPromptOpenChange?.(event.currentTarget.open)}
+      >
         <summary data-help="">Read or manually copy prompt</summary>
         <textarea
           aria-label="Agent demo prompt for manual copying"
@@ -230,6 +238,7 @@ export function JudgeQuickStartCard({
 export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToolsState }) {
   const [open, setOpen] = useState(false)
   const [copyState, setCopyState] = useState<QuickStartCopyState>('idle')
+  const [promptOpen, setPromptOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
@@ -256,6 +265,7 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
   }
 
   const copyPrompt = async () => {
+    setPromptOpen(true)
     const copied = await copyJudgeDemoPrompt(window.navigator.clipboard, window.document)
     setCopyState(copied ? 'copied' : 'failed')
   }
@@ -290,6 +300,7 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
         aria-label="Run agent demo"
         onClick={() => {
           setCopyState('idle')
+          setPromptOpen(false)
           setOpen((current) => {
             if (current) rememberJudgeQuickStartDismissed(getJudgeQuickStartStorage(window))
             return !current
@@ -306,6 +317,8 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
           copyState={copyState}
           onCopy={() => { void copyPrompt() }}
           onDismiss={dismiss}
+          promptOpen={promptOpen}
+          onPromptOpenChange={setPromptOpen}
         />
       )}
     </div>

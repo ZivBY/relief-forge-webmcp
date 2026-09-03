@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { dirname, join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -9,13 +9,20 @@ const scriptsDirectory = dirname(fileURLToPath(import.meta.url))
 const repositoryRoot = resolve(scriptsDirectory, '..')
 const wranglerEntry = resolve(repositoryRoot, 'node_modules/wrangler/bin/wrangler.js')
 const wranglerConfig = resolve(repositoryRoot, 'dist/server/wrangler.json')
-const temporaryDirectory = await mkdtemp(join(tmpdir(), 'relief-forge-webmcp-smoke-'))
+const hostedCommit = process.env.VITE_RELIEF_FORGE_COMMIT?.trim() ?? ''
 let child
 let logs = ''
 
 function assert(condition, message) {
   if (!condition) throw new Error(message)
 }
+
+assert(
+  /^[0-9a-f]{40}$/i.test(hostedCommit),
+  'Hosted preview verification requires VITE_RELIEF_FORGE_COMMIT to be a full Git commit SHA.',
+)
+
+const temporaryDirectory = await mkdtemp(join(tmpdir(), 'relief-forge-webmcp-smoke-'))
 
 async function availablePort() {
   const server = createServer()
@@ -27,6 +34,19 @@ async function availablePort() {
   assert(address && typeof address === 'object', 'Could not reserve a local smoke-test port.')
   await new Promise((resolveClose, reject) => server.close((error) => error ? reject(error) : resolveClose()))
   return address.port
+}
+
+async function directoryContainsText(directory, expectedText) {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const entryPath = resolve(directory, entry.name)
+    if (entry.isDirectory()) {
+      if (await directoryContainsText(entryPath, expectedText)) return true
+      continue
+    }
+    if (!entry.isFile() || !/\.(?:html|js)$/i.test(entry.name)) continue
+    if ((await readFile(entryPath, 'utf8')).includes(expectedText)) return true
+  }
+  return false
 }
 
 async function requestPath(baseUrl, path, headers = {}) {
@@ -80,6 +100,16 @@ async function stopChild() {
 }
 
 try {
+  for (const [label, directory] of [
+    ['client', resolve(repositoryRoot, 'dist/client')],
+    ['server', resolve(repositoryRoot, 'dist/server')],
+  ]) {
+    assert(
+      await directoryContainsText(directory, hostedCommit),
+      `${label} bundle is missing the hosted build commit.`,
+    )
+  }
+
   const port = await availablePort()
   const baseUrl = `http://127.0.0.1:${port}`
   child = spawn(process.execPath, [
@@ -152,6 +182,7 @@ try {
     callbackRecovery: callbackRecovery.status,
     feedbackRoute: feedbackRoute.status,
     cachePolicy: 'no-store',
+    buildCommit: hostedCommit.slice(0, 7),
   }, null, 2))
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error)

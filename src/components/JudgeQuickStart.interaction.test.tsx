@@ -148,7 +148,21 @@ describe('JudgeQuickStart interactions', () => {
       .toContain('press Send')
     expect(container.querySelector('.judge-quick-start__copy-status')?.textContent)
       .toContain('Keep this Relief Forge page open')
-    expect(container.querySelector('.judge-quick-start__prompt')?.hasAttribute('open')).toBe(true)
+    const copiedPrompt = container.querySelector<HTMLDetailsElement>('.judge-quick-start__prompt')
+    expect(copiedPrompt?.open).toBe(true)
+
+    await act(async () => {
+      if (!copiedPrompt) throw new Error('Expected the manual prompt details element')
+      copiedPrompt.open = false
+      copiedPrompt.dispatchEvent(new Event('toggle', { bubbles: true }))
+    })
+    expect(copiedPrompt?.open).toBe(false)
+
+    await act(async () => {
+      buttonWithText(container, 'Prompt ready — go to your AI chat').click()
+      await Promise.resolve()
+    })
+    expect(copiedPrompt?.open).toBe(true)
 
     const trigger = buttonWithText(container, 'Run agent demo')
     await act(async () => {
