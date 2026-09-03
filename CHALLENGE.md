@@ -83,15 +83,20 @@ The result is exactly **1219.2 × 1219.2 mm**, with a **30 mm** configured
 maximum depth and **2.4–30 mm** actual depth range. The preset applies its fixed
 warm architectural palette. With a **256 × 256 mm** full bed, **5 mm** margins,
 **4 mm** spacing, rotation enabled, and colors allowed to share plates, all
-**81** parts are digitally placed across **62 print plates**. The largest part
-footprint is **195.808 × 195.808 mm**, within the **246 × 246 mm** usable area.
+**81** parts are digitally placed across **62 print plates**. The largest
+actual placed part footprint is **195.808 × 190.805 mm**. No placed part
+exceeds **195.808 mm** in either footprint dimension, within the
+**246 × 246 mm** usable area.
 
 ## How it was built
 
-Relief Forge is a React/TypeScript browser application. Its geometry, stable
-identifiers, packing, mesh validation, and export generation are deterministic
-local code. The challenge extension is a thin imperative WebMCP adapter around
-the same actions used by the editor:
+Relief Forge is a React/TypeScript browser application. Its geometry and stable
+identifiers are deterministic local code. Packing, mesh validation, and export
+generation also run locally and repeat within the audited Chromium runtime.
+Equivalent near-tie packing choices can differ at floating-point precision
+across JavaScript runtimes, so cross-runtime ZIP byte identity is not claimed.
+The challenge extension is a thin imperative WebMCP adapter around the same
+actions used by the editor:
 
 - Tools register only when `document.modelContext` is available.
 - Registration is tied to the mounted editor lifecycle so tools are not
@@ -110,20 +115,27 @@ prerequisite for export; export readiness is evaluated from the current state.
 The hosted challenge copy is a separate deployment with OpenAI Sites access
 control and ChatGPT sign-in. The host processes sign-in identity for access
 control, but Relief Forge does not persist it. The app has no app-owned
-feedback endpoint, analytics, application database, or remote project storage.
+feedback endpoint, analytics, server-side application database, or remote
+project storage.
 
 ## Verification evidence
 
-The locked showcase produces project `wall-art-g6-238bfdaa`, 81 parts, 62
-plates, and a 656,651-byte ZIP with SHA-256
+The recorded Chromium reference run produced project
+`wall-art-g6-238bfdaa`, 81 parts, 62 plates, and a 656,651-byte ZIP with SHA-256
 `d86d4966242fd71542fcedab83bde3071447b9239e497fea2a9f59cc587462d0`.
-Automated action tests reproduce the same project identity and packing plan.
+The byte count and hash identify that audited browser artifact; exact ZIP bytes
+are not claimed to match across JavaScript runtimes. Automated action tests
+reproduce the same project identity and 62-plate fit result.
 
-The saved ZIP contains 215 entries, including 81 per-part STLs, 62 packed-plate
-STLs, 63 3MF files, three assembly PDFs, a project recipe, and matching
-manifests. Digital inspection reports every part placed and manifold and the
-full reference closed and outward-wound. These are software checks, not a
-physical-print or installation certification.
+The reference ZIP contains 215 entries, including 81 per-part STLs, 62
+packed-plate STLs, 63 3MF files, three assembly PDFs, a project recipe, and
+matching manifests. Digital inspection reports every part placed and manifold
+and the full reference closed and outward-wound. These are software checks, not
+a physical-print or installation certification.
+
+The published 2:58 demo and its gallery captures were recorded from the local
+`v0.1.0` challenge build, so their header identifies the build as `local`. The
+hosted app uses the same version and displays its audited source-commit label.
 
 ## What existed before the challenge
 
@@ -163,8 +175,8 @@ safe operations that preserve a manufacturing contract:
 - Tool results expose measurements and validation state that an agent can
   reason about before export.
 - The public source is separated from private feedback history. The hosted copy
-  has no app-owned analytics, feedback endpoint, database binding, or remote
-  project storage.
+  has no app-owned analytics, feedback endpoint, server-side application
+  database, or remote project storage.
 
 ## What we learned
 
