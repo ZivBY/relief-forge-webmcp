@@ -45,13 +45,13 @@
     "vinext": "1.0.0-beta.8"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.53.1",
+    "@cloudflare/vite-plugin": "^1.54.2",
     "@openai/sites-vite-plugin": "^0.2.0",
-    "@types/node": "^24.10.13",
+    "@types/node": "^26.4.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@types/three": "^0.185.4",
-    "@vitejs/plugin-react": "^6.1.0",
+    "@vitejs/plugin-react": "^6.1.1",
     "@vitejs/plugin-rsc": "0.5.34",
     "happy-dom": "^20.13.2",
     "miniflare": "5.20260820.0-alpha",
