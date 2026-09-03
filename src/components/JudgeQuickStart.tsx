@@ -23,6 +23,19 @@ interface QuickStartStep {
   detail: string
 }
 
+interface PromptDestinationCopy {
+  title: string
+  detail: string
+}
+
+interface CopyActionCopy {
+  idle: string
+  copied: string
+  success: string
+  failure: string
+  disabled?: boolean
+}
+
 const AGENT_STATUS_COPY: Record<AgentToolsState, string> = {
   checking: 'Checking whether this browser can register all four agent tools…',
   ready: 'All four agent tools are registered and ready.',
@@ -30,22 +43,77 @@ const AGENT_STATUS_COPY: Record<AgentToolsState, string> = {
   error: 'Agent tools could not register. Enable Site tools permissions for this page, then reload. The manual editor still works.',
 }
 
+const INTRO_COPY: Record<AgentToolsState, string> = {
+  checking: 'Relief Forge is the shared workspace, not a chat. Wait for 4 AGENT TOOLS READY before you copy and send the prompt from Codex or ChatGPT outside this page.',
+  ready: 'There is no prompt box inside Relief Forge. Copy below, then paste into the Codex or ChatGPT message box that opened this page.',
+  unavailable: 'There is no prompt box inside Relief Forge, and this tab cannot receive agent calls. You may copy the prompt for later, but reopen the app from a supported AI conversation before you send it.',
+  error: 'There is no prompt box inside Relief Forge. Restore all four agent tools before you paste and send the prompt from Codex or ChatGPT outside this page.',
+}
+
+const PROMPT_DESTINATION_COPY: Record<AgentToolsState, PromptDestinationCopy> = {
+  checking: {
+    title: 'Use the Codex or ChatGPT message box outside this webpage.',
+    detail: 'Keep Relief Forge open, but wait for the ready message before you paste and send the prompt.',
+  },
+  ready: {
+    title: 'Use the Codex or ChatGPT message box outside this webpage.',
+    detail: 'Return to the conversation that opened this tab, paste the copied prompt, and press Send. Keep Relief Forge open while the agent works.',
+  },
+  unavailable: {
+    title: 'Reopen Relief Forge from a supported AI conversation first.',
+    detail: 'This tab cannot receive agent tool calls. Open this URL in ChatGPT’s built-in browser or a WebMCP-enabled Chrome tab, then paste the prompt into that conversation.',
+  },
+  error: {
+    title: 'Restore agent tools before sending the prompt.',
+    detail: 'Enable Site tools for this page and reload. When all four tools are ready, paste the prompt into the Codex or ChatGPT conversation outside this webpage.',
+  },
+}
+
+const COPY_ACTION_COPY: Record<AgentToolsState, CopyActionCopy> = {
+  checking: {
+    idle: 'Wait for agent tools',
+    copied: 'Wait for agent tools',
+    success: '',
+    failure: '',
+    disabled: true,
+  },
+  ready: {
+    idle: 'Copy prompt for AI chat',
+    copied: 'Prompt ready — go to your AI chat',
+    success: 'Copy requested. Now switch to Codex or ChatGPT, paste into its message box, and press Send. Keep this Relief Forge page open. If paste is empty, return here and copy from the open prompt below.',
+    failure: 'Copy was blocked. Use the open prompt below to copy it manually, then paste it into the Codex or ChatGPT message box.',
+  },
+  unavailable: {
+    idle: 'Copy prompt for supported AI chat',
+    copied: 'Prompt ready — reopen in an AI browser',
+    success: 'Prompt ready. Reopen Relief Forge from ChatGPT’s built-in browser or a WebMCP-enabled Chrome tab before you paste and send. If paste is empty, use the open prompt below.',
+    failure: 'Copy was blocked. Use the open prompt below to copy it manually, but reopen Relief Forge in a supported AI browser before sending it.',
+  },
+  error: {
+    idle: 'Copy prompt for after recovery',
+    copied: 'Prompt ready — restore agent tools first',
+    success: 'Prompt ready. Restore all four agent tools and reload before you paste and send. If paste is empty, use the open prompt below.',
+    failure: 'Copy was blocked. Use the open prompt below to copy it manually, but restore all four agent tools before sending it.',
+  },
+}
+
 const READY_STEPS: readonly QuickStartStep[] = [
-  { title: 'Ask your agent', detail: 'Copy the demo prompt, keep this page open, and paste it into the agent.' },
-  { title: 'Watch the shared project', detail: 'Design, printer packing, and inspection results update here after each tool call.' },
-  { title: 'Review and save', detail: 'Confirm the inspected plan, then click Save file now after preparation finishes.' },
+  { title: 'Copy the ready-made prompt', detail: 'Use the button above. The exact prompt is also available below for manual copying.' },
+  { title: 'Return to your AI conversation', detail: 'Switch back to the Codex or ChatGPT chat that opened this page. Do not look for a prompt box inside Relief Forge.' },
+  { title: 'Paste and press Send', detail: 'Keep this page open. The agent will call four tools and update this same visible project.' },
+  { title: 'Review and save', detail: 'Check the design and packing results here, then click Save file now after preparation finishes.' },
 ]
 
 const MANUAL_STEPS: readonly QuickStartStep[] = [
   { title: 'Reopen in a supported browser', detail: 'Open this same URL in ChatGPT’s built-in browser—the easiest path—or a WebMCP-enabled Chrome tab.' },
-  { title: 'Confirm all four tools', detail: 'Open How it works there and look for 4 AGENT TOOLS READY before sending the prompt.' },
-  { title: 'Run the same demo', detail: 'Copy the demo prompt, keep that supported page open, and paste it into the agent.' },
+  { title: 'Confirm all four tools', detail: 'Open Run agent demo there and look for 4 AGENT TOOLS READY before sending the prompt.' },
+  { title: 'Run the same demo', detail: 'Copy the prompt, return to the supported Codex or ChatGPT conversation, paste it into the message box, and press Send.' },
 ]
 
 const ERROR_STEPS: readonly QuickStartStep[] = [
   { title: 'Enable Site tools', detail: 'Allow Site tools for this page in your browser permissions, then reload the app.' },
-  { title: 'Confirm registration', detail: 'Open How it works and look for 4 AGENT TOOLS READY before sending the prompt.' },
-  { title: 'Run—or keep editing', detail: 'Run the copied prompt after recovery, or continue safely with the manual editor controls.' },
+  { title: 'Confirm registration', detail: 'Open Run agent demo and look for 4 AGENT TOOLS READY before sending the prompt.' },
+  { title: 'Send from your AI chat', detail: 'After recovery, paste the copied prompt into the Codex or ChatGPT message box outside this webpage—or continue safely with the manual editor.' },
 ]
 
 const TRIGGER_STATUS_COPY: Record<AgentToolsState, string> = {
@@ -61,6 +129,8 @@ export function JudgeQuickStartCard({
   onCopy,
   onDismiss,
 }: JudgeQuickStartCardProps) {
+  const promptDestination = PROMPT_DESTINATION_COPY[agentToolsState]
+  const copyAction = COPY_ACTION_COPY[agentToolsState]
   const steps = agentToolsState === 'unavailable'
     ? MANUAL_STEPS
     : agentToolsState === 'error'
@@ -77,7 +147,7 @@ export function JudgeQuickStartCard({
       <div className="judge-quick-start__header">
         <div>
           <span className="eyebrow">JUDGE QUICK START</span>
-          <h2 id="judge-quick-start-title">Try the agent workflow</h2>
+          <h2 id="judge-quick-start-title">Run the demo from your AI chat</h2>
         </div>
         <button
           data-help=""
@@ -88,8 +158,42 @@ export function JudgeQuickStartCard({
       </div>
 
       <p className="judge-quick-start__intro">
-        One prompt lets your agent create, fit, inspect, and prepare the same project you can edit here.
+        {INTRO_COPY[agentToolsState]}
       </p>
+
+      <div className="judge-quick-start__actions">
+        <button
+          data-help=""
+          className="button judge-quick-start__copy"
+          type="button"
+          onClick={onCopy}
+          disabled={copyAction.disabled}
+        >{copyState === 'copied' ? copyAction.copied : copyAction.idle}</button>
+        <button
+          data-help=""
+          className="button button--ghost"
+          type="button"
+          onClick={onDismiss}
+        >Dismiss</button>
+      </div>
+
+      <p className="judge-quick-start__copy-status" aria-live="polite">
+        {copyState === 'copied'
+          ? copyAction.success
+          : copyState === 'failed'
+            ? copyAction.failure
+            : ''}
+      </p>
+
+      <aside
+        className="judge-quick-start__handoff"
+        data-state={agentToolsState}
+        aria-labelledby="judge-prompt-destination"
+      >
+        <span id="judge-prompt-destination">WHERE TO SEND THE PROMPT</span>
+        <strong>{promptDestination.title}</strong>
+        <small>{promptDestination.detail}</small>
+      </aside>
 
       <p
         className="judge-quick-start__agent-status"
@@ -108,32 +212,16 @@ export function JudgeQuickStartCard({
         ))}
       </ol>
 
-      <div className="judge-quick-start__actions">
-        <button
-          data-help=""
-          className="button judge-quick-start__copy"
-          type="button"
-          onClick={onCopy}
-        >{copyState === 'copied' ? 'Prompt copied' : 'Copy demo prompt'}</button>
-        <button
-          data-help=""
-          className="button button--ghost"
-          type="button"
-          onClick={onDismiss}
-        >Dismiss</button>
-      </div>
-
-      <p className="judge-quick-start__copy-status" aria-live="polite">
-        {copyState === 'copied'
-          ? 'Paste the prompt into your agent while this Relief Forge page stays open.'
-          : copyState === 'failed'
-            ? 'Copy was blocked. Open “Read demo prompt” below and copy it manually.'
-            : ''}
-      </p>
-
-      <details className="judge-quick-start__prompt">
-        <summary data-help="">Read demo prompt</summary>
-        <p>{JUDGE_DEMO_PROMPT}</p>
+      <details className="judge-quick-start__prompt" open={copyState !== 'idle'}>
+        <summary data-help="">Read or manually copy prompt</summary>
+        <textarea
+          aria-label="Agent demo prompt for manual copying"
+          readOnly
+          rows={6}
+          value={JUDGE_DEMO_PROMPT}
+          onFocus={(event) => event.currentTarget.select()}
+          onClick={(event) => event.currentTarget.select()}
+        />
       </details>
     </section>
   )
@@ -168,7 +256,7 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
   }
 
   const copyPrompt = async () => {
-    const copied = await copyJudgeDemoPrompt(window.navigator.clipboard)
+    const copied = await copyJudgeDemoPrompt(window.navigator.clipboard, window.document)
     setCopyState(copied ? 'copied' : 'failed')
   }
 
@@ -199,7 +287,7 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
         type="button"
         aria-controls="judge-quick-start-card"
         aria-expanded={open}
-        aria-label={`${open ? 'Close' : 'Open'} judge quick start — ${TRIGGER_STATUS_COPY[agentToolsState]}`}
+        aria-label="Run agent demo"
         onClick={() => {
           setCopyState('idle')
           setOpen((current) => {
@@ -209,7 +297,8 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
         }}
       >
         <span className="judge-quick-start__trigger-icon" aria-hidden="true">?</span>
-        <span className="judge-quick-start__trigger-label">How it works</span>
+        <span className="judge-quick-start__trigger-label">Run agent demo</span>
+        <span className="judge-quick-start__trigger-short" aria-hidden="true">Demo</span>
       </button>
       {open && (
         <JudgeQuickStartCard

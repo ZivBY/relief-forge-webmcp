@@ -7,7 +7,7 @@ export actions that a person can use in the visible editor.
 
 > Live challenge build: **<https://relief-forge-webmcp.bad-dog-food.chatgpt.site>**
 >
-> Final 2:58 demo: **<https://youtu.be/ZXDmuV3DANk>**
+> Final 2:58 demo: **<https://youtu.be/_5KUM9er3xQ>**
 
 ## What it demonstrates
 
@@ -63,10 +63,17 @@ usable area.
 
 On a first visit, the app opens a non-modal **Judge Quick Start** card. It shows
 whether all four agent tools are ready, explains the create–fit–inspect–prepare
-workflow, and provides one-click copying of the exact prompt above. A readable
-manual-copy fallback remains visible if clipboard access is blocked.
+workflow, and makes the human-agent handoff explicit: Relief Forge is the shared
+workspace, not a chat surface, so there is no prompt box inside the page. The
+reviewer copies the prompt, returns to the Codex or ChatGPT conversation that
+opened the page, pastes it into that message box, and presses Send while keeping
+Relief Forge open. The primary copy action appears before the detailed steps,
+uses both embedded-browser and standard clipboard paths, and opens the readable
+prompt after every copy attempt. If a host browser reports success without
+updating its system clipboard, the card tells the reviewer to copy directly
+from that open field.
 
-Reviewers can dismiss the card and reopen it at any time with **How it works**.
+Reviewers can dismiss the card and reopen it at any time with **Run agent demo**.
 The dismissed state is stored only in local browser storage. If the page reports
 **manual editor mode**, the editor still works, but the agent workflow must be
 run in ChatGPT's built-in browser or another environment that exposes the

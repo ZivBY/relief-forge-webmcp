@@ -5,6 +5,10 @@ const mobilePreviewCss = readFileSync(
   new URL('./mobile-preview.css', import.meta.url),
   'utf8',
 )
+const rootStyles = readFileSync(
+  new URL('./styles.css', import.meta.url),
+  'utf8',
+)
 const rootLayout = readFileSync(
   new URL('../app/layout.tsx', import.meta.url),
   'utf8',
@@ -49,7 +53,9 @@ describe('guided mobile editor stylesheet', () => {
     expect(mobilePreviewCss).toContain('min-height: 44px')
     expect(mobilePreviewCss).toContain('env(safe-area-inset-bottom)')
     expect(mobilePreviewCss).toContain('.mobile-workflow-footer')
-    expect(mobilePreviewCss).toContain('.material-topbar .topbar-actions .button')
+    expect(mobilePreviewCss).toContain('.material-topbar .topbar-actions > .button')
+    expect(mobilePreviewCss).toContain('> .judge-quick-start > .judge-quick-start__trigger')
+    expect(mobilePreviewCss).not.toContain('.material-topbar .topbar-actions .button')
     expect(mobilePreviewCss).toContain('.material-studio .wall-art-viewer__view-button')
     expect(mobilePreviewCss).toContain('.material-studio .wall-art-viewer__parity-badge')
   })
@@ -65,5 +71,12 @@ describe('guided mobile editor stylesheet', () => {
     expect(rootLayout.indexOf("import '../src/mobile-preview.css'")).toBeGreaterThan(
       rootLayout.indexOf("import '../src/styles.css'"),
     )
+  })
+
+  it('keeps judge onboarding below the wrapped phone header', () => {
+    expect(rootStyles).toContain('@media (max-width: 374px)')
+    expect(rootStyles).toContain('top: 139px')
+    expect(rootStyles).toContain('max-height: calc(100dvh - 151px - env(safe-area-inset-bottom))')
+    expect(rootStyles).toContain('.judge-quick-start__trigger-short')
   })
 })
