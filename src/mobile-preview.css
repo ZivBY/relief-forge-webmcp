@@ -66,8 +66,18 @@
     min-height: 44px;
   }
 
-  .material-topbar .topbar-actions .button {
+  .material-topbar .topbar-actions > .button,
+  .material-topbar .topbar-actions > .judge-quick-start > .judge-quick-start__trigger {
     width: 44px;
+    min-height: 44px;
+  }
+
+  .material-topbar .topbar-actions > .judge-quick-start > .judge-quick-start__trigger {
+    width: auto;
+    padding-inline: 12px;
+  }
+
+  .material-topbar .topbar-actions > .judge-quick-start .judge-quick-start__card .button {
     min-height: 44px;
   }
 

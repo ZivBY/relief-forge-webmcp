@@ -2,9 +2,9 @@
 
 Final runtime: **2 minutes 58 seconds**. Challenge cap: **3 minutes**.
 
-Final video: <https://youtu.be/ZXDmuV3DANk>
+Final video: <https://youtu.be/_5KUM9er3xQ>
 
-The published video is Unlisted, 1920 × 1080 at 30 fps, and includes timed
+The published video is Public, 1920 × 1080 at 30 fps, and includes timed
 English captions.
 
 ## Reproducible prompt
@@ -17,6 +17,13 @@ Use this exact prompt:
 > millimetre spacing. Allow rotation and let colors share plates. Inspect the
 > exact plan, then prepare the fabrication package only if every digital check
 > passes.
+
+### Where the prompt goes
+
+Relief Forge is the shared workspace, not the chat. Keep the app open, then
+paste this prompt into the Codex or ChatGPT conversation that opened the page
+and press Send. The live **Run agent demo** card makes that handoff explicit and
+states that there is intentionally no prompt box inside Relief Forge.
 
 Expected progression:
 
@@ -157,6 +164,10 @@ files. The luxury-home ending is a concept, not a produced installation.”
 - The live-app URL is visible; no localhost or private URL appears.
 - All four exact WebMCP tool names appear.
 - The supported-browser indicator visibly reports four agent tools ready.
+- The live quick start explicitly directs reviewers to the external Codex or
+  ChatGPT message box and keeps the copy action visible before the detailed steps.
+- A copy attempt opens the full prompt as a manual fallback, and unavailable or
+  errored agent-tool states never tell the reviewer to send prematurely.
 - The prompt, source, and video use the same fixed seed and Polar Bloom recipe.
 - Finished size is 1219.2 × 1219.2 mm with 81 parts and 62 plates.
 - Printer values visibly match 256 × 256 mm, 5 mm, and 4 mm.

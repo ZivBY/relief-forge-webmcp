@@ -58,7 +58,7 @@ describe('JudgeQuickStart interactions', () => {
     await renderQuickStart()
 
     expect(container.querySelector('#judge-quick-start-card')).not.toBeNull()
-    expect(buttonWithText(container, 'How it works').getAttribute('aria-expanded')).toBe('true')
+    expect(buttonWithText(container, 'Run agent demo').getAttribute('aria-expanded')).toBe('true')
 
     await act(async () => {
       buttonWithText(container, 'Dismiss').click()
@@ -66,7 +66,7 @@ describe('JudgeQuickStart interactions', () => {
 
     expect(container.querySelector('#judge-quick-start-card')).toBeNull()
     expect(window.localStorage.getItem(JUDGE_QUICK_START_STORAGE_KEY)).toBe('dismissed')
-    expect(document.activeElement).toBe(buttonWithText(container, 'How it works'))
+    expect(document.activeElement).toBe(buttonWithText(container, 'Run agent demo'))
 
     await act(async () => {
       root.unmount()
@@ -76,7 +76,7 @@ describe('JudgeQuickStart interactions', () => {
 
     expect(container.querySelector('#judge-quick-start-card')).toBeNull()
 
-    const trigger = buttonWithText(container, 'How it works')
+    const trigger = buttonWithText(container, 'Run agent demo')
     await act(async () => {
       trigger.click()
     })
@@ -92,7 +92,7 @@ describe('JudgeQuickStart interactions', () => {
 
   it('leaves Escape and focus ownership with an active modal dialog', async () => {
     await renderQuickStart()
-    const trigger = buttonWithText(container, 'How it works')
+    const trigger = buttonWithText(container, 'Run agent demo')
     const modal = document.createElement('section')
     const modalButton = document.createElement('button')
     modal.setAttribute('aria-modal', 'true')
@@ -136,16 +136,21 @@ describe('JudgeQuickStart interactions', () => {
     await renderQuickStart()
 
     await act(async () => {
-      buttonWithText(container, 'Copy demo prompt').click()
+      buttonWithText(container, 'Copy prompt for AI chat').click()
       await Promise.resolve()
     })
 
     expect(writeText).toHaveBeenCalledWith(JUDGE_DEMO_PROMPT)
-    expect(buttonWithText(container, 'Prompt copied')).toBeTruthy()
+    expect(buttonWithText(container, 'Prompt ready — go to your AI chat')).toBeTruthy()
     expect(container.querySelector('.judge-quick-start__copy-status')?.textContent)
-      .toContain('Paste the prompt into your agent')
+      .toContain('switch to Codex or ChatGPT')
+    expect(container.querySelector('.judge-quick-start__copy-status')?.textContent)
+      .toContain('press Send')
+    expect(container.querySelector('.judge-quick-start__copy-status')?.textContent)
+      .toContain('Keep this Relief Forge page open')
+    expect(container.querySelector('.judge-quick-start__prompt')?.hasAttribute('open')).toBe(true)
 
-    const trigger = buttonWithText(container, 'How it works')
+    const trigger = buttonWithText(container, 'Run agent demo')
     await act(async () => {
       trigger.click()
     })
@@ -158,13 +163,34 @@ describe('JudgeQuickStart interactions', () => {
     })
 
     await act(async () => {
-      buttonWithText(container, 'Copy demo prompt').click()
+      buttonWithText(container, 'Copy prompt for AI chat').click()
       await Promise.resolve()
     })
 
     expect(container.querySelector('.judge-quick-start__copy-status')?.textContent)
       .toContain('Copy was blocked')
-    expect(container.querySelector('.judge-quick-start__prompt')?.textContent)
+    const manualPrompt = container.querySelector<HTMLDetailsElement>('.judge-quick-start__prompt')
+    expect(manualPrompt?.open).toBe(true)
+    expect(manualPrompt?.textContent)
       .toContain(JUDGE_DEMO_PROMPT)
+  })
+
+  it('never tells judges to send before unavailable agent tools are restored', async () => {
+    const writeText = vi.fn(async () => undefined)
+    Object.defineProperty(window.navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
+    await renderQuickStart('unavailable')
+
+    await act(async () => {
+      buttonWithText(container, 'Copy prompt for supported AI chat').click()
+      await Promise.resolve()
+    })
+
+    expect(buttonWithText(container, 'Prompt ready — reopen in an AI browser')).toBeTruthy()
+    const status = container.querySelector('.judge-quick-start__copy-status')?.textContent ?? ''
+    expect(status).toContain('before you paste and send')
+    expect(status).not.toContain('Now switch to Codex or ChatGPT')
   })
 })

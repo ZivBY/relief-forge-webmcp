@@ -16,7 +16,7 @@ prepare printable files in a visible browser studio.
 - Public source: <https://github.com/ZivBY/relief-forge-webmcp>
 - Baseline tag: <https://github.com/ZivBY/relief-forge-webmcp/tree/pre-webmcp-public-snapshot>
 - Challenge diff: <https://github.com/ZivBY/relief-forge-webmcp/compare/pre-webmcp-public-snapshot...main>
-- Demo video: <https://youtu.be/ZXDmuV3DANk>
+- Demo video: <https://youtu.be/_5KUM9er3xQ>
 
 ## Inspiration
 
@@ -62,9 +62,13 @@ before it requests an export. A reviewer can watch the editor change at each
 step and can continue adjusting the same project manually.
 
 A first-run **Judge Quick Start** card makes that evaluation path
-self-contained. It shows agent-tool readiness, summarizes the three reviewer
-steps, copies the exact demo prompt, exposes a readable manual-copy fallback,
-and remains available from **How it works** after dismissal.
+self-contained. It explicitly says that Relief Forge is the shared workspace,
+not the chat, and directs reviewers to paste the prompt into the Codex or
+ChatGPT message box outside the webpage. The primary copy action appears before
+four concrete handoff steps, clipboard failure automatically exposes the manual
+prompt, and every copy attempt also opens the source field as a fail-safe for
+embedded browsers that do not update the host clipboard. The card remains
+available from **Run agent demo** after dismissal.
 
 ## Reproducible test prompt
 
@@ -185,11 +189,14 @@ exports, and honest boundaries around what digital validation proves.
 2. Read the Judge Quick Start status. ChatGPT's built-in browser is the easiest
    evaluation path. If the card reports manual editor mode, move the page to a
    WebMCP-capable context before testing agent tools.
-3. Confirm that the card reports all four agent tools ready, then copy and send
-   the reproducible prompt above while keeping Relief Forge open.
-4. Watch each tool call update the visible editor.
-5. Compare the final inspection with the Fabricate panel.
-6. After preparation, use the visible **Save file now** control.
+3. Confirm that the card reports all four agent tools ready, then select
+   **Copy prompt for AI chat**.
+4. Return to the Codex or ChatGPT conversation that opened the page, paste the
+   prompt into its message box, and press Send. There is intentionally no prompt
+   box inside Relief Forge; keep the page open for the tool calls.
+5. Watch each tool call update the visible editor.
+6. Compare the final inspection with the Fabricate panel.
+7. After preparation, use the visible **Save file now** control.
 
 No judge-specific allowlist is configured. The production Site is
 link-accessible while retaining ChatGPT sign-in, so anonymous visitors are
