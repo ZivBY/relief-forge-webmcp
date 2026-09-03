@@ -23,6 +23,14 @@ import type {
 export const INCH_TO_MM = 25.4;
 export const TOPOGRAPHIC_TERRACES_PRESET = "topographic-terraces" as const;
 export const TOPOGRAPHIC_MOSAIC_PRESET = "topographic-mosaic" as const;
+export const POLAR_BLOOM_PRESET = "polar-bloom" as const;
+export const POLAR_BLOOM_PALETTE = [
+  "#30251f",
+  "#8f4f3b",
+  "#b8613f",
+  "#d9c7aa",
+  "#f3eadc",
+] as const;
 export const MIN_OBJECT_DEPTH_MM = 3;
 export const MAX_OBJECT_DEPTH_MM = 80;
 export const DEFAULT_WALL_ART_HEIGHT_MM = 609.6;
@@ -36,8 +44,10 @@ export type TopographicPreset =
   | typeof TOPOGRAPHIC_TERRACES_PRESET
   | typeof TOPOGRAPHIC_MOSAIC_PRESET;
 
+export type WallArtPreset = TopographicPreset | typeof POLAR_BLOOM_PRESET;
+
 export interface CreateWallArtActionInput {
-  preset: TopographicPreset;
+  preset: WallArtPreset;
   width: number;
   height?: number;
   unit: WallArtLengthUnit;
@@ -66,7 +76,7 @@ export interface PackingFailure {
 
 export interface FabricationPlanSummary {
   projectId: string;
-  preset: TopographicPreset | "custom";
+  preset: WallArtPreset | "custom";
   finishedSizeMm: {
     width: number;
     height: number;
@@ -212,10 +222,11 @@ function parseCreateWallArtInput(input: unknown): CreateWallArtActionInput {
 
   if (
     input.preset !== TOPOGRAPHIC_TERRACES_PRESET &&
-    input.preset !== TOPOGRAPHIC_MOSAIC_PRESET
+    input.preset !== TOPOGRAPHIC_MOSAIC_PRESET &&
+    input.preset !== POLAR_BLOOM_PRESET
   ) {
     throw new Error(
-      `preset must be ${TOPOGRAPHIC_TERRACES_PRESET} or ${TOPOGRAPHIC_MOSAIC_PRESET}.`,
+      `preset must be ${TOPOGRAPHIC_TERRACES_PRESET}, ${TOPOGRAPHIC_MOSAIC_PRESET}, or ${POLAR_BLOOM_PRESET}.`,
     );
   }
   if (input.unit !== "mm" && input.unit !== "in") {
@@ -354,14 +365,57 @@ function hasTopographicRecipe(config: WallArtConfig): boolean {
   );
 }
 
-function identifyTopographicPreset(config: WallArtConfig): TopographicPreset | "custom" {
-  if (!hasTopographicRecipe(config)) return "custom";
-  if (config.grid.columns === 4 && config.grid.rows === 3) {
-    return TOPOGRAPHIC_TERRACES_PRESET;
+function hasPolarBloomRecipe(config: WallArtConfig): boolean {
+  return (
+    config.source.kind === "procedural" &&
+    config.design.family === "polar-bloom" &&
+    config.design.silhouette === "ellipse" &&
+    config.design.variation === 0.45 &&
+    config.design.symmetry === 16 &&
+    config.design.surfaceResolution === 12 &&
+    config.grid.columns === 10 &&
+    config.grid.rows === 10 &&
+    config.grid.tileSizeMm === 32 &&
+    config.grid.gapMm === 2.4 &&
+    config.tile.shape === "polar-petal" &&
+    config.tile.baseHeightMm === DEFAULT_WALL_ART_CONFIG.tile.baseHeightMm &&
+    config.tile.reliefHeightMm >= MIN_OBJECT_DEPTH_MM - config.tile.baseHeightMm &&
+    config.tile.reliefHeightMm <= MAX_OBJECT_DEPTH_MM - config.tile.baseHeightMm &&
+    config.tile.topScale === 0.38 &&
+    config.tile.leanRatio === 0.18 &&
+    config.tile.twistDeg === 28 &&
+    config.pattern.kind === "ripple" &&
+    config.pattern.frequency === 1.2 &&
+    config.pattern.amplitude === 1 &&
+    config.pattern.angleDeg === 32 &&
+    config.pattern.phaseDeg === 0 &&
+    config.pattern.centerX === 0 &&
+    config.pattern.centerY === 0 &&
+    config.pattern.arms === 3 &&
+    config.pattern.noiseScale === 1.8 &&
+    config.pattern.octaves === 4 &&
+    config.pattern.lacunarity === 2 &&
+    config.pattern.gain === 0.5 &&
+    config.depthProfile.invert === false &&
+    config.depthProfile.contrast === 1 &&
+    config.depthProfile.curve === 0 &&
+    config.depthProfile.levels === 0 &&
+    config.localDepth.masks.length === 0 &&
+    !config.localDepth.paint &&
+    config.guides.lines.length === 0
+  );
+}
+
+function identifyWallArtPreset(config: WallArtConfig): WallArtPreset | "custom" {
+  if (hasTopographicRecipe(config)) {
+    if (config.grid.columns === 4 && config.grid.rows === 3) {
+      return TOPOGRAPHIC_TERRACES_PRESET;
+    }
+    if (config.grid.columns === 12 && config.grid.rows === 8) {
+      return TOPOGRAPHIC_MOSAIC_PRESET;
+    }
   }
-  if (config.grid.columns === 12 && config.grid.rows === 8) {
-    return TOPOGRAPHIC_MOSAIC_PRESET;
-  }
+  if (hasPolarBloomRecipe(config)) return POLAR_BLOOM_PRESET;
   return "custom";
 }
 
@@ -387,7 +441,7 @@ export function summarizeFabricationPlan(
 
   return {
     projectId: project.id,
-    preset: identifyTopographicPreset(project.config),
+    preset: identifyWallArtPreset(project.config),
     finishedSizeMm: {
       width: project.widthMm,
       height: project.depthMm,
@@ -452,8 +506,9 @@ function buildActionResult(
 }
 
 /**
- * Build one of the challenge's deterministic topographic presets while retaining only
- * the user's current palette and exact printer-bed settings.
+ * Build one of the challenge's deterministic presets while retaining the exact
+ * printer-bed settings. Topographic recipes retain the current palette; Polar
+ * Bloom applies its curated showcase palette.
  */
 export function createWallArtAction(
   input: unknown,
@@ -462,57 +517,86 @@ export function createWallArtAction(
   const parsed = parseCreateWallArtInput(input);
   const current = createWallArtConfig(currentConfig);
   const widthMm = toMillimetres(parsed.width, parsed.unit);
+  const isPolarBloom = parsed.preset === POLAR_BLOOM_PRESET;
   const heightMm =
     parsed.height === undefined
-      ? Math.round(
-          widthMm * (DEFAULT_WALL_ART_HEIGHT_MM / DEFAULT_WALL_ART_WIDTH_MM) * 1_000_000_000,
-        ) / 1_000_000_000
+      ? isPolarBloom
+        ? widthMm
+        : Math.round(
+            widthMm * (DEFAULT_WALL_ART_HEIGHT_MM / DEFAULT_WALL_ART_WIDTH_MM) * 1_000_000_000,
+          ) / 1_000_000_000
       : toMillimetres(parsed.height, parsed.unit);
   const baseHeightMm = Math.min(
     DEFAULT_WALL_ART_CONFIG.tile.baseHeightMm,
     parsed.depthMm,
   );
-  const grid = parsed.preset === TOPOGRAPHIC_MOSAIC_PRESET
-    ? { columns: 12, rows: 8, tileSizeMm: 150, gapMm: 2 }
-    : { columns: 4, rows: 3, tileSizeMm: 150, gapMm: 2 };
+  const grid = isPolarBloom
+    ? { columns: 10, rows: 10, tileSizeMm: 32, gapMm: 2.4 }
+    : parsed.preset === TOPOGRAPHIC_MOSAIC_PRESET
+      ? { columns: 12, rows: 8, tileSizeMm: 150, gapMm: 2 }
+      : { columns: 4, rows: 3, tileSizeMm: 150, gapMm: 2 };
 
   const config = createWallArtConfig({
     seed: parsed.seed ?? DEFAULT_TOPOGRAPHIC_SEED,
     source: { kind: "procedural" },
     finishedSize: { widthMm, heightMm, lockAspect: false },
-    design: {
-      family: "contour-relief",
-      silhouette: "rectangle",
-      variation: 0.42,
-      symmetry: 8,
-      surfaceResolution: 20,
-    },
+    design: isPolarBloom
+      ? {
+          family: "polar-bloom",
+          silhouette: "ellipse",
+          variation: 0.45,
+          symmetry: 16,
+          surfaceResolution: 12,
+        }
+      : {
+          family: "contour-relief",
+          silhouette: "rectangle",
+          variation: 0.42,
+          symmetry: 8,
+          surfaceResolution: 20,
+        },
     grid,
-    tile: {
-      shape: "terraced-panel",
-      baseHeightMm,
-      reliefHeightMm: parsed.depthMm - baseHeightMm,
-      topScale: 0.38,
-      leanRatio: 0,
-      twistDeg: 0,
-    },
-    depthProfile: {
-      invert: false,
-      contrast: 1.2,
-      curve: -0.08,
-      levels: 8,
-    },
+    tile: isPolarBloom
+      ? {
+          shape: "polar-petal",
+          baseHeightMm,
+          reliefHeightMm: parsed.depthMm - baseHeightMm,
+          topScale: 0.38,
+          leanRatio: 0.18,
+          twistDeg: 28,
+        }
+      : {
+          shape: "terraced-panel",
+          baseHeightMm,
+          reliefHeightMm: parsed.depthMm - baseHeightMm,
+          topScale: 0.38,
+          leanRatio: 0,
+          twistDeg: 0,
+        },
+    depthProfile: isPolarBloom
+      ? {
+          invert: false,
+          contrast: 1,
+          curve: 0,
+          levels: 0,
+        }
+      : {
+          invert: false,
+          contrast: 1.2,
+          curve: -0.08,
+          levels: 8,
+        },
     localDepth: { masks: [] },
     pattern: {
-      kind: "noise",
-      frequency: 1,
+      kind: isPolarBloom ? "ripple" : "noise",
+      frequency: isPolarBloom ? 1.2 : 1,
       amplitude: 1,
-      angleDeg: 0,
+      angleDeg: isPolarBloom ? 32 : 0,
       phaseDeg: 0,
       centerX: 0,
       centerY: 0,
       arms: 3,
-      noiseScale: 1.42,
+      noiseScale: isPolarBloom ? 1.8 : 1.42,
       octaves: 4,
       lacunarity: 2,
       gain: 0.5,
@@ -521,7 +605,14 @@ export function createWallArtAction(
       ...DEFAULT_WALL_ART_CONFIG.guides,
       lines: [],
     },
-    palette: current.palette,
+    palette: isPolarBloom
+      ? {
+          colors: [...POLAR_BLOOM_PALETTE],
+          mode: "field-bands",
+          offset: 0,
+          reverse: false,
+        }
+      : current.palette,
     printer: current.printer,
   });
 

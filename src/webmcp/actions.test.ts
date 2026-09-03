@@ -9,6 +9,8 @@ import {
   DEFAULT_TOPOGRAPHIC_SEED,
   DEFAULT_WALL_ART_HEIGHT_MM,
   inspectFabricationPlanAction,
+  POLAR_BLOOM_PALETTE,
+  POLAR_BLOOM_PRESET,
   setPrinterBedAction,
   shapeFabricationPackageResult,
   TOPOGRAPHIC_MOSAIC_PRESET,
@@ -28,6 +30,15 @@ const TOPOGRAPHIC_MOSAIC_REQUEST = {
   unit: "in",
   depthMm: 28,
   seed: "webmcp-showcase-073",
+} as const;
+
+const POLAR_BLOOM_REQUEST = {
+  preset: POLAR_BLOOM_PRESET,
+  width: 48,
+  height: 48,
+  unit: "in",
+  depthMm: 30,
+  seed: "webmcp-polar-bloom-showcase-001",
 } as const;
 
 describe("WebMCP wall-art actions", () => {
@@ -133,6 +144,111 @@ describe("WebMCP wall-art actions", () => {
       allPartsClosedManifold: true,
       fullMeshClosedManifold: true,
       fullMeshOutwardWinding: true,
+    });
+  });
+
+  it("creates the exact-size Polar Bloom showcase deterministically", () => {
+    const current = createWallArtConfig({
+      palette: {
+        colors: ["#004488", "#ddaa33"],
+        mode: "seeded-random",
+        offset: 2,
+        reverse: true,
+      },
+    });
+    const first = createWallArtAction(POLAR_BLOOM_REQUEST, current);
+    const second = createWallArtAction(POLAR_BLOOM_REQUEST, current);
+
+    expect(first.config.finishedSize).toEqual({
+      widthMm: 1219.2,
+      heightMm: 1219.2,
+      lockAspect: false,
+    });
+    expect(first.config.design).toMatchObject({
+      family: "polar-bloom",
+      silhouette: "ellipse",
+      variation: 0.45,
+      symmetry: 16,
+    });
+    expect(first.config.grid).toEqual({
+      columns: 10,
+      rows: 10,
+      tileSizeMm: 32,
+      gapMm: 2.4,
+    });
+    expect(first.config.tile).toMatchObject({
+      shape: "polar-petal",
+      baseHeightMm: 2.4,
+      reliefHeightMm: 27.6,
+      leanRatio: 0.18,
+    });
+    expect(first.config.pattern).toMatchObject({
+      kind: "ripple",
+      frequency: 1.2,
+      centerX: 0,
+      centerY: 0,
+    });
+    expect(first.config.palette).toEqual({
+      colors: [...POLAR_BLOOM_PALETTE],
+      mode: "field-bands",
+      offset: 0,
+      reverse: false,
+    });
+    expect(first.summary.preset).toBe(POLAR_BLOOM_PRESET);
+    expect(first.summary.objectDepthMm.configuredRange).toEqual({
+      minimum: 2.4,
+      maximum: 30,
+      levelCount: 0,
+    });
+    expect(first.project.id).toBe("wall-art-g6-68761ba2");
+    expect(first.summary.partCount).toBe(81);
+    expect(first.project.id).toBe(second.project.id);
+    expect(first.packing).toEqual(second.packing);
+    expect(first.summary.digitalFit).toMatchObject({
+      status: "fits",
+      placedPartCount: 81,
+      plateCount: 62,
+      everyPartPlaced: true,
+      allPartsClosedManifold: true,
+      fullMeshClosedManifold: true,
+      fullMeshOutwardWinding: true,
+    });
+  });
+
+  it("uses a square default aspect for Polar Bloom when height is omitted", () => {
+    const result = createWallArtAction({
+      ...POLAR_BLOOM_REQUEST,
+      width: 36,
+      height: undefined,
+    });
+
+    expect(result.config.finishedSize).toEqual({
+      widthMm: 914.4,
+      heightMm: 914.4,
+      lockAspect: false,
+    });
+  });
+
+  it("preserves the filmed mixed-color printer settings for the Polar Bloom continuation", () => {
+    const mosaic = createWallArtAction(TOPOGRAPHIC_MOSAIC_REQUEST);
+    const mixedColorPlan = setPrinterBedAction({
+      bedWidthMm: 256,
+      bedDepthMm: 256,
+      marginMm: 5,
+      spacingMm: 4,
+      allowRotate90: true,
+      separateColors: false,
+    }, mosaic.config);
+
+    const result = createWallArtAction(POLAR_BLOOM_REQUEST, mixedColorPlan.config);
+
+    expect(result.project.id).toBe("wall-art-g6-238bfdaa");
+    expect(result.config.printer.separateColors).toBe(false);
+    expect(result.summary.digitalFit).toMatchObject({
+      status: "fits",
+      placedPartCount: 81,
+      plateCount: 62,
+      everyPartPlaced: true,
     });
   });
 
@@ -248,6 +364,14 @@ describe("WebMCP wall-art actions", () => {
     }));
 
     expect(edited.summary.preset).toBe("custom");
+
+    const polarBloom = createWallArtAction(POLAR_BLOOM_REQUEST);
+    const editedBloom = inspectFabricationPlanAction(createWallArtConfig({
+      ...polarBloom.config,
+      design: { ...polarBloom.config.design, symmetry: 15 },
+    }));
+
+    expect(editedBloom.summary.preset).toBe("custom");
   });
 
   it("strictly rejects ambiguous, unsupported, and impractical create inputs", () => {
@@ -256,7 +380,7 @@ describe("WebMCP wall-art actions", () => {
     expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, unit: "feet" }))
       .toThrow(/unit must be either/);
     expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, preset: "unknown" }))
-      .toThrow(/preset must be topographic-terraces or topographic-mosaic/);
+      .toThrow(/preset must be topographic-terraces, topographic-mosaic, or polar-bloom/);
     expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, depthMm: 2.99 }))
       .toThrow(/depthMm must be at least 3/);
     expect(() => createWallArtAction({ ...TOPOGRAPHIC_REQUEST, depthMm: 80.01 }))
