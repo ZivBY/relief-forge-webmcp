@@ -1,175 +1,185 @@
 # Relief Forge WebMCP demo script
 
-Target length: **2 minutes 47 seconds**. Hard cap: **2 minutes 55 seconds**.
-Record in English with prominent narration and burned-in captions.
+Final runtime: **2 minutes 58 seconds**. Challenge cap: **3 minutes**.
+
+Final video: <https://youtu.be/ZXDmuV3DANk>
+
+The published video is Unlisted, 1920 × 1080 at 30 fps, and includes timed
+English captions.
 
 ## Reproducible prompt
 
-Use this exact prompt on camera:
+Use this exact prompt:
 
-> Use Relief Forge to create a 48-inch-wide by 32-inch-tall topographic-terraces
-> wall piece, 28 mm deep, with deterministic seed `webmcp-showcase-073`. Fit it
-> to a 256 × 256 mm full printer bed with a 5 mm edge margin and 4 mm part
-> spacing, allow 90-degree rotation, and allow colors to share plates. Inspect
-> the plan. If a broad panel is oversized, preserve the exact dimensions,
-> depth, and seed but switch to the topographic-mosaic preset so the artwork has
-> 96 smaller panels with richer contour sampling. Reinspect and prepare the
-> package only if every part fits and the digital mesh checks pass.
+> Create a 48-inch Polar Bloom statement piece, 30 millimetres deep, using the
+> fixed seed webmcp-polar-bloom-showcase-001 and the warm architectural palette.
+> Fit it to a 256 by 256 millimetre printer bed with 5 millimetre margins and 4
+> millimetre spacing. Allow rotation and let colors share plates. Inspect the
+> exact plan, then prepare the fabrication package only if every digital check
+> passes.
 
 Expected progression:
 
-1. `topographic-terraces` creates project `wall-art-g6-490aa8d6`, but its
-   largest broad panel requires approximately 301.8 × 268.5 mm against a 246 ×
-   246 mm usable bed.
-2. `topographic-mosaic` preserves the 1219.2 × 812.8 mm finished artwork, 28 mm
-   maximum depth, and seed while repartitioning it into a 12 × 8 field.
-3. The final project `wall-art-g6-94007cdc` places all 96 parts across 24
-   mixed-color plates, four parts per plate.
-4. The 6,256,191-byte package has SHA-256
-   `076d8fd0581a68cb7abcf91faee66a6741e95f609db51b15b1eeab55bdab8475`.
-
-## Before recording
-
-- Use the final deployed commit and submitted live-app URL, never localhost.
-- Open Relief Forge as a top-level page in a supported agent context and begin
-  from a fresh project.
-- Confirm all four WebMCP tools are available.
-- Frame only the agent, live app, package inventory, and public project links.
-- Hide names, email addresses, tokens, private URLs, bookmarks, notifications,
-  downloads, and unrelated tabs.
-- Complete one rehearsal and confirm the generated ZIP opens.
-- Keep narration clearly above interface sound and burn in readable captions.
-- Do not show private repository history, the original private deployment, or
-  tester feedback.
+1. `relief_forge_create_wall_art` creates a 1219.2 × 1219.2 mm composition with
+   81 parts, 30 mm maximum depth, a fixed seed, and the preset's warm
+   architectural palette.
+2. `relief_forge_set_printer_bed` applies a 256 × 256 mm full bed, 5 mm margin,
+   4 mm spacing, 90-degree rotation, and mixed-color packing. This produces the
+   locked project `wall-art-g6-238bfdaa`. All 81 parts fit across 62 plates;
+   the largest part footprint is 195.808 × 195.808 mm inside the 246 × 246 mm
+   usable area.
+3. `relief_forge_inspect_fabrication_plan` reports 81 of 81 parts placed, every
+   part digitally manifold, and the full reference closed and outward-wound.
+4. `relief_forge_prepare_fabrication_package` prepares a 656,651-byte ZIP with
+   SHA-256
+   `d86d4966242fd71542fcedab83bde3071447b9239e497fea2a9f59cc587462d0`.
 
 ## Shot and narration plan
 
-### 0:00–0:08 — Start with the tangible result
+### 0:00–0:09 — Start with the tangible result
 
-**Screen:** Moving close-up of the dense final relief. Overlay: `48 × 32 inches
-· 96 parts · 24 plates`.
+**Screen:** Moving close-up of the Polar Bloom and its fabrication counts.
+Overlay: `48 × 48 inches · 81 parts · 62 plates`.
 
-**Narration:** “Most AI design demos end with an image. Relief Forge ends with
-96 printable parts, a verified plate plan, and fabrication files.”
+**Narration:** “Most AI art demos end with an image. Relief Forge turns one
+request into this four-foot Polar Bloom and a fabrication plan.”
 
-### 0:08–0:21 — Introduce the tools
+### 0:09–0:23 — Introduce the tools
 
-**Screen:** Agent and Relief Forge side by side; show the four exact tool names.
+**Screen:** Show the four exact tool names and emphasize that each operates on
+the same visible editor state.
 
-**Narration:** “We added four WebMCP tools to the existing deterministic browser
-app: create a design, configure the printer envelope, inspect the manufacturing
-plan, and prepare the package. The agent operates the same visible project a
-person can still edit.”
+**Narration:** “We connected four WebMCP tools to Relief Forge: create the
+artwork, set printer constraints, inspect the plan, and prepare the package.
+The agent works in the same visible project as the person guiding it.”
 
-### 0:21–0:39 — Send the demanding request
+### 0:23–0:42 — Show the exact request
 
-**Screen:** Show and send the complete prompt.
+**Screen:** Display the full prompt, fixed seed, exact bed measurements, and
+guarded-export requirement.
 
-**Narration:** “The request is deliberately demanding: a 48 by 32 inch
-topographic wall piece, 28 millimetres deep, with a fixed seed; fit it to a 256
-millimetre bed with 5 millimetre margins and 4 millimetre spacing. If broad
-panels fail, preserve the exact design and repartition it.”
+**Narration:** “The brief: make a forty-eight-inch square Polar Bloom, thirty
+millimetres deep, as statement art. Fit every piece to a
+two-hundred-fifty-six-millimetre-square bed with five-millimetre margins and
+four-millimetre spacing. Allow rotation and let colors share plates.”
 
-### 0:39–0:57 — Create the broad version
+### 0:42–0:59 — Create the sculptural project
 
-**Expected tools:** `relief_forge_create_wall_art`, then
-`relief_forge_set_printer_bed`.
+**Expected tool:** `relief_forge_create_wall_art` with `preset: polar-bloom`,
+`width: 48`, `unit: in`, `depthMm: 30`, and seed
+`webmcp-polar-bloom-showcase-001`. The omitted height intentionally uses the
+recipe's square fallback, so height equals width.
 
-**Screen:** Show the 4 × 3 model appear, then the exact printer values.
+**Screen:** Show the structured call, the authentic browser update, the
+four-tools-ready indicator, and the 81-part model.
 
-**Narration:** “The create tool first maps the prompt to 12 broad topographic
-terraces. Relief Forge generates the exact 1219.2 by 812.8 millimetre field in
-the visible editor. The printer tool applies explicit bed dimensions and
-clearances, without guessing from a printer name.”
+**Narration:** “The create tool builds an exact forty-eight-inch square from
+eighty-one sculpted parts, up to thirty millimetres deep. A fixed seed makes it
+reproducible. Its warm architectural palette is preset, not improvised by the
+model.”
 
-### 0:57–1:15 — Catch the real constraint
+### 0:59–1:16 — Apply the printer envelope
+
+**Expected tool:** `relief_forge_set_printer_bed` with a 256 × 256 mm bed, 5 mm
+margin, 4 mm spacing, rotation enabled, and `separateColors: false`.
+
+**Screen:** Show the exact settings, the computed fit, 81 of 81 parts placed,
+62 plates, and the 195.808 × 195.808 mm maximum part footprint.
+
+**Narration:** “Next, the printer tool applies a
+two-hundred-fifty-six-millimetre-square bed, five-millimetre margins,
+four-millimetre spacing, and ninety-degree rotation. Colors can share a plate,
+so packing follows geometry rather than forced color batches.”
+
+### 1:16–1:40 — Show the geometry and packing
+
+**Screen:** Move between sculpted color, numbered assembly, and representative
+plate views. Emphasize the center plus four rings and stable ring-and-sector
+part identifiers.
+
+**Narration:** “Relief Forge then packs all eighty-one parts across sixty-two
+print plates. That scale is intentional: this is a four-foot artwork, not a
+design squeezed onto one bed. The largest part is just under
+one-hundred-ninety-six millimetres square, within the
+two-hundred-forty-six-millimetre usable area. Its exact footprint is shown on
+screen.”
+
+### 1:40–2:01 — Inspect the current project snapshot
 
 **Expected tool:** `relief_forge_inspect_fabrication_plan`.
 
-**Screen:** Show the structured failure beside the visible blocked export.
-Highlight required 301.8 × 268.5 mm and usable 246 × 246 mm.
+**Screen:** Show finished size, part envelope, actual 2.4–30 mm depth, 81
+parts, 62 plates, project identity, and the digital geometry checks.
 
-**Narration:** “Inspection returns a structured constraint: the largest panel
-is about 301.8 by 268.5 millimetres, larger than the 246 millimetre usable bed.
-The mesh itself is closed, but the part does not fit, so export remains
-blocked.”
+**Narration:** “Now the inspect tool reads the computed plan without changing
+it. All eighty-one parts are placed and digitally manifold. The full reference
+mesh is closed and outward-facing, and the exact project ID is shown on screen.
+These are digital geometry checks—not a claim that we physically printed this
+installation.”
 
-### 1:15–1:39 — Preserve the art; make the pieces smaller
-
-**Expected tool:** `relief_forge_create_wall_art` with
-`preset: topographic-mosaic`, followed by the printer settings.
-
-**Screen:** Show the live transition from 12 broad slabs to the dense 12 × 8
-field. Orbit close enough to reveal the richer terraces, then show assembly IDs.
-
-**Narration:** “The agent now uses that failure as data. It keeps the size,
-depth, seed, and artwork, but calls the same create tool with the
-topographic-mosaic preset. Relief Forge repartitions the piece into a 12-by-8
-grid: 96 smaller panels with richer contour sampling.”
-
-### 1:39–2:00 — Verify the repaired plan
-
-**Expected tool:** `relief_forge_inspect_fabrication_plan`.
-
-**Screen:** Show 1219.2 × 812.8 mm, 96/96, 24 plates, and the green checks.
-Cycle from plate 1 to plate 12 to plate 24.
-
-**Narration:** “A second inspection confirms the full 48 by 32 inch design is
-unchanged. All 96 parts are placed across 24 print plates. Every part is closed,
-and the assembled reference is closed and outward-wound. These are digital
-checks, not a claim of physical print performance.”
-
-### 2:00–2:28 — Prepare and inspect the package
+### 2:01–2:28 — Prepare and inspect the package
 
 **Expected tool:** `relief_forge_prepare_fabrication_package`.
 
-**Screen:** Show completion and the visible **Save file now** link. The reviewer
-uses it, then opens the ZIP inventory to show part STLs, plate STLs, 3MF files,
-PDFs, recipe, and manifests.
+**Screen:** Show the guarded call, visible **Save file now** control, exact
+filename, representative plate files, and the package inventory.
 
-**Narration:** “Only then does the final tool build the exact validated
-snapshot. The 6.26 megabyte ZIP contains 96 part STLs, 24 packed-plate STLs, 25
-3MF files, three assembly PDFs, the editable project recipe, and matching
-manifests. The agent prepares it; the reviewer clicks the visible Save link.”
+**Narration:** “After inspection, the final tool builds a package from the same
+state. It contains eighty-one part STLs, sixty-two plate STLs, sixty-three 3MF
+files, three assembly PDFs, the editable recipe, and matching manifests. A
+visible Save link keeps the person in control of the download.”
 
 ### 2:28–2:47 — Explain the WebMCP difference
 
-**Screen:** Return through model, assembly, and plate views, then end on the
-public live-app and repository URLs.
+**Screen:** Summarize structured intent versus deterministic local output, then
+show the public app and source-repository URLs.
 
-**Narration:** “That is the WebMCP difference. The agent gets a small, typed
-manufacturing vocabulary; Relief Forge stays responsible for deterministic
-geometry, stable identifiers, packing, validation, and exports. One prompt
-becomes a caught constraint, a repaired plan, and files ready for the
-workshop.”
+**Narration:** “That's the WebMCP difference. The agent supplies structured
+intent; Relief Forge returns deterministic dimensions, packing, inspection,
+and exports. One conversational brief becomes a traceable fabrication
+workflow, while the visual editor stays usable.”
+
+### 2:47–2:58 — Show the wider creative potential
+
+**Screen:** Brief illustration of a young maker, the authentic Relief Forge
+output, and a luxury-home concept. End with:
+`CONCEPT VISUALIZATION · PHYSICAL INSTALLATION NOT YET PRODUCED`.
+
+The public repository and live-app URLs appear immediately before this
+epilogue, not over the final concept frame.
+
+**Narration:** “A young maker can start with an idea and reach real fabrication
+files. The luxury-home ending is a concept, not a produced installation.”
 
 ## Acceptance checklist
 
-- Total duration is below 2:55; narration is clearly audible throughout.
-- The submitted live-app URL is visible, never localhost.
-- All four exact tool names appear in the real agent flow.
-- The first inspection visibly fails because the broad panel exceeds the bed.
-- The finished dimensions, depth, and seed remain unchanged after repair.
-- The model visibly changes from a 4 × 3 field to a 12 × 8, 96-part field.
-- The printer values visibly match 256 × 256, 5, and 4 mm.
-- Plate 1, a middle plate, and plate 24 are shown.
-- Final inspection and the Fabricate panel agree on project, dimensions,
-  parts, plates, and digital checks.
-- The prepared download belongs to the same final project revision.
-- Part STLs, plate STLs, a 3MF, an assembly PDF, and a manifest are readable in
-  the ZIP inventory.
-- No personal information, private URLs, credentials, notifications, or tester
-  data appear.
-- The ending frame shows the public repository and live app.
+- Final runtime is 2:58, below the three-minute cap.
+- The live-app URL is visible; no localhost or private URL appears.
+- All four exact WebMCP tool names appear.
+- The supported-browser indicator visibly reports four agent tools ready.
+- The prompt, source, and video use the same fixed seed and Polar Bloom recipe.
+- Finished size is 1219.2 × 1219.2 mm with 81 parts and 62 plates.
+- Printer values visibly match 256 × 256 mm, 5 mm, and 4 mm.
+- Colors may share plates and 90-degree rotation is enabled.
+- Final inspection and the Fabricate panel agree on project identity, parts,
+  plates, and digital checks.
+- The package inventory shows 81 part STLs, 62 plate STLs, 63 3MF files, three
+  PDFs, the recipe, and manifests.
+- The person—not the agent—controls the final browser download.
+- The URLs appear immediately before the epilogue.
+- The final concept is explicitly disclosed as not physically produced.
+- Timed English captions are published and 1080p playback is available.
 
 ## Claims to avoid
 
-- Do not say the design has been physically printed or proven unless that exact
-  package is printed and measured.
+- Do not say the design has been physically printed, measured, or installed.
 - Do not call a brand name a verified printer profile; the demo uses an
   explicit rectangular bed envelope.
-- Do not say access is judge-only. It is ChatGPT-sign-in-gated, not allowlisted.
+- Do not say access is judge-only. The Site is ChatGPT-sign-in-gated, not
+  allowlisted to judges.
 - Do not claim the agent downloaded files automatically. It prepared the
-  package and the reviewer initiated the final download.
-- Do not imply WebMCP generated the mesh. Relief Forge's deterministic geometry
-  engine did.
+  package and the reviewer controls the visible Save action.
+- Do not imply WebMCP or a language model generated the mesh. Relief Forge's
+  deterministic local geometry engine did.
+- Do not present the luxury-room image as photographic evidence; it is an
+  explicitly labeled concept visualization.

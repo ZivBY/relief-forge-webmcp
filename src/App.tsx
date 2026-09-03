@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { APP_BUILD_LABEL } from './build-info'
 import { AssemblyPreview } from './components/AssemblyPreview'
 import { DepthControls } from './components/DepthControls'
 import { DepthPaintEditor } from './components/DepthPaintEditor'
 import { GuideEditor, type GuideInteractionMode } from './components/GuideEditor'
+import { JudgeQuickStart } from './components/JudgeQuickStart'
 import {
   MobilePreviewSizeControl,
   MobileWorkflowFooter,
@@ -34,6 +34,7 @@ import {
   continueControlHelpWithPointer,
   resetControlHelpInteraction,
 } from './control-help-interaction'
+import type { AgentToolsState } from './judge-quick-start'
 import {
   createWallArtConfig,
   DEFAULT_WALL_ART_CONFIG,
@@ -131,8 +132,6 @@ type PreviewMode = 'model' | 'assembly' | 'plates'
 type WorkflowStep = MobileWorkflowSectionId
 type ExportState = 'idle' | 'master' | 'tiled' | 'package'
 type NumericPrinterField = 'bedWidthMm' | 'bedDepthMm' | 'marginMm' | 'spacingMm'
-type AgentToolsState = 'checking' | 'ready' | 'unavailable' | 'error'
-
 interface PatternOption {
   kind: PatternKind
   label: string
@@ -1961,17 +1960,7 @@ function App() {
           ))}
         </nav>
         <div className="topbar-actions">
-          <span className="local-badge" data-agent-tools={agentToolsState} aria-live="polite">
-            <i />{
-              agentToolsState === 'ready'
-                ? '4 AGENT TOOLS READY'
-                : agentToolsState === 'unavailable'
-                  ? 'MANUAL MODE · WEBMCP UNAVAILABLE'
-                  : agentToolsState === 'error'
-                    ? 'AGENT TOOLS NEED ATTENTION'
-                    : 'CONNECTING AGENT TOOLS'
-            } · {APP_BUILD_LABEL}
-          </span>
+          <JudgeQuickStart agentToolsState={agentToolsState} />
           <button {...controlHelp('Create a new deterministic variation while keeping every other design setting unchanged.')} className="button button--ghost" type="button" onClick={randomizeSeed}><Icon name="shuffle" />New seed</button>
           <button
             {...controlHelp('Reset the entire project to Relief Forge defaults, including design settings, guides, colors, printer settings, imported photo data, and depth painting. Downloaded files stay unchanged. A confirmation appears first.')}

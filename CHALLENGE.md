@@ -16,7 +16,7 @@ prepare printable files in a visible browser studio.
 - Public source: <https://github.com/ZivBY/relief-forge-webmcp>
 - Baseline tag: <https://github.com/ZivBY/relief-forge-webmcp/tree/pre-webmcp-public-snapshot>
 - Challenge diff: <https://github.com/ZivBY/relief-forge-webmcp/compare/pre-webmcp-public-snapshot...main>
-- Demo video: <https://youtu.be/KF61pmK77OY>
+- Demo video: <https://youtu.be/ZXDmuV3DANk>
 
 ## Inspiration
 
@@ -28,9 +28,9 @@ editor in charge of the artifact.
 
 The motivating request is concrete:
 
-> Make me a four-foot-wide topographic wall installation with enough small
-> panels to preserve the terrain detail, split it across however many print
-> jobs are needed for my printer, validate the plan, and prepare the files.
+> Make me a four-foot-square Polar Bloom statement piece with a reproducible
+> design and fixed palette. Fit every part to my printer, validate the exact
+> plan, and prepare the fabrication files.
 
 That sentence contains units, aesthetic intent, fabrication constraints, and a
 deliverable. The implementation adds an explicit inspection step before
@@ -43,10 +43,10 @@ The integration registers four WebMCP tools designed to let an agent operate
 Relief Forge:
 
 1. `relief_forge_create_wall_art` applies a supported style and exact finished
-   dimensions to the visible design. Both named presets use procedural
-   contour-relief geometry, terraced panels, seeded noise, and eight configured
-   depth levels. `topographic-terraces` uses a broad 4 × 3 grid;
-   `topographic-mosaic` uses a denser 12 × 8 grid of 96 smaller panels.
+   dimensions to the visible design. The demo's `polar-bloom` recipe uses true
+   rings and radial sectors with deterministic `polar-petal` geometry. Its
+   sizing controls map to a center plus four concentric rings containing 81
+   parts. The tool also retains the broad and dense topographic recipes.
 2. `relief_forge_set_printer_bed` applies explicit full-bed dimensions, edge
    margin, and part spacing to the visible packing plan. The margin is reserved
    inside every bed edge.
@@ -57,29 +57,30 @@ Relief Forge:
    download available to the reviewer in the visible editor.
 
 The agent can translate inches to millimetres, choose the deterministic
-topographic-inspired mapping, configure the printer envelope, and check the
-result before it requests an export. A reviewer can watch the editor change at
-each step and can continue adjusting the same project manually.
+Polar Bloom mapping, configure the printer envelope, and check the result
+before it requests an export. A reviewer can watch the editor change at each
+step and can continue adjusting the same project manually.
+
+A first-run **Judge Quick Start** card makes that evaluation path
+self-contained. It shows agent-tool readiness, summarizes the three reviewer
+steps, copies the exact demo prompt, exposes a readable manual-copy fallback,
+and remains available from **How it works** after dismissal.
 
 ## Reproducible test prompt
 
-> Use Relief Forge to create a 48-inch-wide by 32-inch-tall topographic-terraces
-> wall piece, 28 mm deep, with deterministic seed `webmcp-showcase-073`. Fit it
-> to a 256 × 256 mm full printer bed with a 5 mm edge margin and 4 mm part
-> spacing, allow 90-degree rotation, and allow colors to share plates. Inspect
-> the plan. If a broad panel is oversized, preserve the exact dimensions,
-> depth, and seed but switch to the topographic-mosaic preset so the artwork has
-> 96 smaller panels with richer contour sampling. Reinspect and prepare the
-> package only if every part fits and the digital mesh checks pass.
+> Create a 48-inch Polar Bloom statement piece, 30 millimetres deep, using the
+> fixed seed webmcp-polar-bloom-showcase-001 and the warm architectural palette.
+> Fit it to a 256 by 256 millimetre printer bed with 5 millimetre margins and 4
+> millimetre spacing. Allow rotation and let colors share plates. Inspect the
+> exact plan, then prepare the fabrication package only if every digital check
+> passes.
 
-The first 4 × 3 result is the requested **1219.2 × 812.8 mm**, but its largest
-panel requires approximately **301.8 × 268.5 mm** and cannot fit the **246 ×
-246 mm** usable bed. The corrected `topographic-mosaic` result preserves the
-finished size, depth, and seed while changing only the partition to a **12 ×
-8** grid. Its **96** approximately 100.4 mm panels fit four per plate and
-produce **24 print plates** when colors may share a plate. The recipe configures
-eight terraced levels between **2.4 and 28 mm**; seven distinct positive surface
-heights occur across the full range.
+The result is exactly **1219.2 × 1219.2 mm**, with a **30 mm** configured
+maximum depth and **2.4–30 mm** actual depth range. The preset applies its fixed
+warm architectural palette. With a **256 × 256 mm** full bed, **5 mm** margins,
+**4 mm** spacing, rotation enabled, and colors allowed to share plates, all
+**81** parts are digitally placed across **62 print plates**. The largest part
+footprint is **195.808 × 195.808 mm**, within the **246 × 246 mm** usable area.
 
 ## How it was built
 
@@ -109,19 +110,16 @@ feedback endpoint, analytics, application database, or remote project storage.
 
 ## Verification evidence
 
-The exact dense showcase produces project `wall-art-g6-94007cdc`, 96 parts, 24
-plates, and a 6,256,191-byte ZIP with SHA-256
-`076d8fd0581a68cb7abcf91faee66a6741e95f609db51b15b1eeab55bdab8475`.
+The locked showcase produces project `wall-art-g6-238bfdaa`, 81 parts, 62
+plates, and a 656,651-byte ZIP with SHA-256
+`d86d4966242fd71542fcedab83bde3071447b9239e497fea2a9f59cc587462d0`.
 Automated action tests reproduce the same project identity and packing plan.
-The live deployment is rechecked after every release so the visible project,
-tool result, and prepared browser artifact can be compared with this evidence.
 
-The saved ZIP contains 96 per-part STLs, 24 packed-plate STLs, one aligned
-full-art STL, 25 3MF files, three assembly PDFs, a project recipe, and matching
-assembly and plate manifests. An exact binary inspection found finite,
-closed, positive-volume STL shells and kept every packed plate inside the
-configured 256 × 256 mm full-bed envelope. These are digital checks, not a
-physical-print certification.
+The saved ZIP contains 215 entries, including 81 per-part STLs, 62 packed-plate
+STLs, 63 3MF files, three assembly PDFs, a project recipe, and matching
+manifests. Digital inspection reports every part placed and manifold and the
+full reference closed and outward-wound. These are software checks, not a
+physical-print or installation certification.
 
 ## What existed before the challenge
 
@@ -183,14 +181,15 @@ exports, and honest boundaries around what digital validation proves.
 
 ## Reviewer access
 
-1. Open the live app as a top-level page.
-2. Complete ChatGPT sign-in when prompted.
-3. Use a WebMCP-capable agent/browser environment and keep the Relief Forge tab
-   open.
-4. Send the reproducible test prompt above.
-5. Confirm that each tool call produces a visible status/update in the editor.
-6. Compare the inspection result with the Fabricate panel.
-7. After package preparation, use the visible download control to save the ZIP.
+1. Open the live app as a top-level page and complete ChatGPT sign-in.
+2. Read the Judge Quick Start status. ChatGPT's built-in browser is the easiest
+   evaluation path. If the card reports manual editor mode, move the page to a
+   WebMCP-capable context before testing agent tools.
+3. Confirm that the card reports all four agent tools ready, then copy and send
+   the reproducible prompt above while keeping Relief Forge open.
+4. Watch each tool call update the visible editor.
+5. Compare the final inspection with the Fabricate panel.
+6. After preparation, use the visible **Save file now** control.
 
 No judge-specific allowlist is configured. The production Site is
 link-accessible while retaining ChatGPT sign-in, so anonymous visitors are

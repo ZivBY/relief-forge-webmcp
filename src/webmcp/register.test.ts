@@ -82,6 +82,7 @@ describe('Relief Forge WebMCP registration', () => {
     expect(CREATE_WALL_ART_INPUT_SCHEMA.properties.preset.enum).toEqual([
       'topographic-terraces',
       'topographic-mosaic',
+      'polar-bloom',
     ])
     expect(SET_PRINTER_BED_INPUT_SCHEMA.required).toEqual(['bedWidthMm', 'bedDepthMm'])
     expect(SET_PRINTER_BED_INPUT_SCHEMA.additionalProperties).toBe(false)
