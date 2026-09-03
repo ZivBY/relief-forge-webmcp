@@ -3,6 +3,7 @@ import { APP_BUILD_LABEL } from '../build-info'
 import {
   JUDGE_DEMO_PROMPT,
   copyJudgeDemoPrompt,
+  getJudgeQuickStartStorage,
   rememberJudgeQuickStartDismissed,
   shouldAutoOpenJudgeQuickStart,
   type AgentToolsState,
@@ -17,11 +18,41 @@ interface JudgeQuickStartCardProps {
   onDismiss: () => void
 }
 
+interface QuickStartStep {
+  title: string
+  detail: string
+}
+
 const AGENT_STATUS_COPY: Record<AgentToolsState, string> = {
-  checking: 'Checking for the four agent tools…',
-  ready: 'Connected — all four agent tools are ready.',
-  unavailable: 'Manual mode. Open this page in ChatGPT’s in-app browser or WebMCP-enabled Chrome.',
-  error: 'The agent tools need attention. Reload the page before running the demo.',
+  checking: 'Checking whether this browser can register all four agent tools…',
+  ready: 'All four agent tools are registered and ready.',
+  unavailable: 'This browser is in manual editor mode—the editor still works. For the easiest agent test, open this page in ChatGPT’s built-in browser. A WebMCP-enabled Chrome tab also works.',
+  error: 'Agent tools could not register. Enable Site tools permissions for this page, then reload. The manual editor still works.',
+}
+
+const READY_STEPS: readonly QuickStartStep[] = [
+  { title: 'Ask your agent', detail: 'Copy the demo prompt, keep this page open, and paste it into the agent.' },
+  { title: 'Watch the shared project', detail: 'Design, printer packing, and inspection results update here after each tool call.' },
+  { title: 'Review and save', detail: 'Confirm the inspected plan, then click Save file now after preparation finishes.' },
+]
+
+const MANUAL_STEPS: readonly QuickStartStep[] = [
+  { title: 'Reopen in a supported browser', detail: 'Open this same URL in ChatGPT’s built-in browser—the easiest path—or a WebMCP-enabled Chrome tab.' },
+  { title: 'Confirm all four tools', detail: 'Open How it works there and look for 4 AGENT TOOLS READY before sending the prompt.' },
+  { title: 'Run the same demo', detail: 'Copy the demo prompt, keep that supported page open, and paste it into the agent.' },
+]
+
+const ERROR_STEPS: readonly QuickStartStep[] = [
+  { title: 'Enable Site tools', detail: 'Allow Site tools for this page in your browser permissions, then reload the app.' },
+  { title: 'Confirm registration', detail: 'Open How it works and look for 4 AGENT TOOLS READY before sending the prompt.' },
+  { title: 'Run—or keep editing', detail: 'Run the copied prompt after recovery, or continue safely with the manual editor controls.' },
+]
+
+const TRIGGER_STATUS_COPY: Record<AgentToolsState, string> = {
+  checking: 'checking agent tools',
+  ready: 'four agent tools ready',
+  unavailable: 'manual editor, agent tools off',
+  error: 'agent tool registration error',
 }
 
 export function JudgeQuickStartCard({
@@ -30,6 +61,12 @@ export function JudgeQuickStartCard({
   onCopy,
   onDismiss,
 }: JudgeQuickStartCardProps) {
+  const steps = agentToolsState === 'unavailable'
+    ? MANUAL_STEPS
+    : agentToolsState === 'error'
+      ? ERROR_STEPS
+      : READY_STEPS
+
   return (
     <section
       id="judge-quick-start-card"
@@ -63,9 +100,12 @@ export function JudgeQuickStartCard({
       </p>
 
       <ol className="judge-quick-start__steps">
-        <li><span aria-hidden="true">01</span><div><strong>Ask your agent</strong><small>Copy the demo prompt, keep this page open, and paste it into the agent.</small></div></li>
-        <li><span aria-hidden="true">02</span><div><strong>Watch the shared project</strong><small>Design, printer packing, and inspection results update here after each tool call.</small></div></li>
-        <li><span aria-hidden="true">03</span><div><strong>Review and save</strong><small>Confirm the inspected plan, then click Save file now after preparation finishes.</small></div></li>
+        {steps.map((step, index) => (
+          <li key={step.title}>
+            <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+            <div><strong>{step.title}</strong><small>{step.detail}</small></div>
+          </li>
+        ))}
       </ol>
 
       <div className="judge-quick-start__actions">
@@ -105,7 +145,7 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
   const triggerRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
-    setOpen(shouldAutoOpenJudgeQuickStart(window.localStorage))
+    setOpen(shouldAutoOpenJudgeQuickStart(getJudgeQuickStartStorage(window)))
   }, [])
 
   useEffect(() => {
@@ -113,7 +153,7 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
       setOpen(false)
-      rememberJudgeQuickStartDismissed(window.localStorage)
+      rememberJudgeQuickStartDismissed(getJudgeQuickStartStorage(window))
       triggerRef.current?.focus()
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -122,7 +162,7 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
 
   const dismiss = () => {
     setOpen(false)
-    rememberJudgeQuickStartDismissed(window.localStorage)
+    rememberJudgeQuickStartDismissed(getJudgeQuickStartStorage(window))
     triggerRef.current?.focus()
   }
 
@@ -138,7 +178,7 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
           agentToolsState === 'ready'
             ? '4 AGENT TOOLS READY'
             : agentToolsState === 'unavailable'
-              ? 'WEBMCP UNAVAILABLE'
+              ? 'MANUAL EDITOR · AGENT TOOLS OFF'
               : agentToolsState === 'error'
                 ? 'AGENT TOOLS NEED ATTENTION'
                 : 'CONNECTING AGENT TOOLS'
@@ -147,15 +187,16 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
       <button
         ref={triggerRef}
         data-help=""
+        data-agent-tools={agentToolsState}
         className="button button--ghost judge-quick-start__trigger"
         type="button"
         aria-controls="judge-quick-start-card"
         aria-expanded={open}
-        aria-label={open ? 'Close judge quick start' : 'Open judge quick start'}
+        aria-label={`${open ? 'Close' : 'Open'} judge quick start — ${TRIGGER_STATUS_COPY[agentToolsState]}`}
         onClick={() => {
           setCopyState('idle')
           setOpen((current) => {
-            if (current) rememberJudgeQuickStartDismissed(window.localStorage)
+            if (current) rememberJudgeQuickStartDismissed(getJudgeQuickStartStorage(window))
             return !current
           })
         }}

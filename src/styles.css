@@ -2542,7 +2542,11 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: 0 0 0 3px rgba(174, 137, 82, 0.13);
 }
 
-.material-topbar .local-badge[data-agent-tools="unavailable"] i,
+.material-topbar .local-badge[data-agent-tools="unavailable"] i {
+  background: #c08b3e;
+  box-shadow: 0 0 0 3px rgba(192, 139, 62, 0.13);
+}
+
 .material-topbar .local-badge[data-agent-tools="error"] i {
   background: var(--gallery-clay);
   box-shadow: 0 0 0 3px rgba(184, 99, 69, 0.13);
@@ -2581,6 +2585,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .judge-quick-start__trigger-icon {
+  position: relative;
   display: grid;
   width: 19px;
   height: 19px;
@@ -2592,6 +2597,30 @@ input[type="range"]::-moz-range-thumb {
   font-size: 11px;
   font-weight: 800;
   line-height: 1;
+}
+
+.judge-quick-start__trigger-icon::after {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 7px;
+  height: 7px;
+  border: 2px solid #fffaf4;
+  border-radius: 50%;
+  background: var(--gallery-brass);
+  content: '';
+}
+
+.judge-quick-start__trigger[data-agent-tools="ready"] .judge-quick-start__trigger-icon::after {
+  background: var(--gallery-sage);
+}
+
+.judge-quick-start__trigger[data-agent-tools="unavailable"] .judge-quick-start__trigger-icon::after {
+  background: #c08b3e;
+}
+
+.judge-quick-start__trigger[data-agent-tools="error"] .judge-quick-start__trigger-icon::after {
+  background: #b54f3b;
 }
 
 .judge-quick-start__trigger-label {
@@ -2686,14 +2715,22 @@ input[type="range"]::-moz-range-thumb {
   background: var(--gallery-brass);
 }
 
-.judge-quick-start__agent-status[data-state="unavailable"],
+.judge-quick-start__agent-status[data-state="unavailable"] {
+  border-color: #dbc59c;
+  color: #725c38;
+  background: #f7eddc;
+}
+
+.judge-quick-start__agent-status[data-state="unavailable"] i {
+  background: #c08b3e;
+}
+
 .judge-quick-start__agent-status[data-state="error"] {
   border-color: #e2c5b9;
   color: #805343;
   background: #f8e5dc;
 }
 
-.judge-quick-start__agent-status[data-state="unavailable"] i,
 .judge-quick-start__agent-status[data-state="error"] i {
   background: var(--gallery-clay);
 }
@@ -4017,7 +4054,7 @@ input[type="range"]::-moz-range-thumb {
     gap: 5px;
   }
 
-  .material-topbar .topbar-actions .button:last-child {
+  .material-topbar .topbar-actions > .button:last-child {
     display: none;
   }
 

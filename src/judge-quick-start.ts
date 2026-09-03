@@ -2,7 +2,7 @@ export type AgentToolsState = 'checking' | 'ready' | 'unavailable' | 'error'
 
 export const JUDGE_QUICK_START_STORAGE_KEY = 'relief-forge-judge-quick-start-v1'
 
-export const JUDGE_DEMO_PROMPT = `Use Relief Forge to create a 48-inch-wide by 32-inch-tall topographic-terraces wall piece, 28 mm deep, with deterministic seed webmcp-showcase-073. Fit it to a 256 × 256 mm full printer bed with a 5 mm edge margin and 4 mm part spacing, allow 90-degree rotation, and allow colors to share plates. Inspect the plan. If a broad panel is oversized, preserve the exact dimensions, depth, and seed but switch to the topographic-mosaic preset so the artwork has 96 smaller panels with richer contour sampling. Reinspect and prepare the package only if every part fits and the digital mesh checks pass.`
+export const JUDGE_DEMO_PROMPT = `Create a 48-inch Polar Bloom statement piece, 30 millimetres deep, using the fixed seed webmcp-polar-bloom-showcase-001 and the warm architectural palette. Fit it to a 256 by 256 millimetre printer bed with 5 millimetre margins and 4 millimetre spacing. Allow rotation and let colors share plates. Inspect the exact plan, then prepare the fabrication package only if every digital check passes.`
 
 interface StorageReader {
   getItem(key: string): string | null
@@ -12,8 +12,21 @@ interface StorageWriter {
   setItem(key: string, value: string): void
 }
 
+interface StorageProvider {
+  readonly localStorage: StorageReader & StorageWriter
+}
+
 interface ClipboardWriter {
   writeText(value: string): Promise<void>
+}
+
+export function getJudgeQuickStartStorage(provider: StorageProvider | undefined): (StorageReader & StorageWriter) | undefined {
+  if (!provider) return undefined
+  try {
+    return provider.localStorage
+  } catch {
+    return undefined
+  }
 }
 
 export function shouldAutoOpenJudgeQuickStart(storage: StorageReader | undefined): boolean {
