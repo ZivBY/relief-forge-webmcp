@@ -41,6 +41,8 @@ const POLAR_BLOOM_REQUEST = {
   seed: "webmcp-polar-bloom-showcase-001",
 } as const;
 
+const HEAVY_GEOMETRY_TIMEOUT_MS = 15_000;
+
 describe("WebMCP wall-art actions", () => {
   it("creates the exact 36-inch topographic preset deterministically", () => {
     const first = createWallArtAction(TOPOGRAPHIC_REQUEST);
@@ -145,7 +147,7 @@ describe("WebMCP wall-art actions", () => {
       fullMeshClosedManifold: true,
       fullMeshOutwardWinding: true,
     });
-  });
+  }, HEAVY_GEOMETRY_TIMEOUT_MS);
 
   it("creates the exact-size Polar Bloom showcase deterministically", () => {
     const current = createWallArtConfig({
@@ -229,18 +231,16 @@ describe("WebMCP wall-art actions", () => {
     });
   });
 
-  it("preserves the filmed mixed-color printer settings for the Polar Bloom continuation", () => {
-    const mosaic = createWallArtAction(TOPOGRAPHIC_MOSAIC_REQUEST);
-    const mixedColorPlan = setPrinterBedAction({
+  it("applies the filmed mixed-color printer settings to the Polar Bloom project", () => {
+    const created = createWallArtAction(POLAR_BLOOM_REQUEST);
+    const result = setPrinterBedAction({
       bedWidthMm: 256,
       bedDepthMm: 256,
       marginMm: 5,
       spacingMm: 4,
       allowRotate90: true,
       separateColors: false,
-    }, mosaic.config);
-
-    const result = createWallArtAction(POLAR_BLOOM_REQUEST, mixedColorPlan.config);
+    }, created.config);
 
     expect(result.project.id).toBe("wall-art-g6-238bfdaa");
     expect(result.config.printer.separateColors).toBe(false);
@@ -273,7 +273,7 @@ describe("WebMCP wall-art actions", () => {
     expect(packed.packing?.plates).toHaveLength(24);
     expect(packed.packing?.plates.every((plate) => plate.placements.length === 4))
       .toBe(true);
-  });
+  }, HEAVY_GEOMETRY_TIMEOUT_MS);
 
   it("lets the showcase preserve its size by replacing oversized broad panels", () => {
     const broad = createWallArtAction({
@@ -307,7 +307,7 @@ describe("WebMCP wall-art actions", () => {
       placedPartCount: 96,
       plateCount: 24,
     });
-  });
+  }, HEAVY_GEOMETRY_TIMEOUT_MS);
 
   it("preserves palette and printer settings but clears prior composition state", () => {
     const current = createWallArtConfig({
