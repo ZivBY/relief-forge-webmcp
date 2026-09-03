@@ -56,7 +56,8 @@ rings of radial sectors, yielding 81 parts rather than a 100-cell grid.
 
 With a 256 × 256 mm full bed, 5 mm margins, 4 mm spacing, 90-degree rotation
 enabled, and colors allowed to share plates, all 81 parts fit across 62 plates.
-The largest part footprint is 195.808 × 195.808 mm inside the 246 × 246 mm
+The largest actual placed part footprint is 195.808 × 190.805 mm. No placed
+part exceeds 195.808 mm in either footprint dimension, within the 246 × 246 mm
 usable area.
 
 ## Judge quick start
@@ -112,11 +113,12 @@ ChatGPT sign-in can open it. Anonymous visitors are redirected to sign in before
 the editor loads.
 
 The challenge copy has no app-owned analytics, feedback collection,
-application database, or remote project storage. The host processes sign-in
-identity for access control, but Relief Forge does not persist it. Design
-settings and locally imported assets stay in browser storage. Geometry and
-fabrication files are generated in the browser. The export tool prepares the
-package, but the person reviewing the app performs the final download click.
+server-side application database, or remote project storage. The host
+processes sign-in identity for access control, but Relief Forge does not
+persist it. Design settings and locally imported assets stay in browser-local
+storage, including IndexedDB where needed. Geometry and fabrication files are
+generated in the browser. The export tool prepares the package, but the person
+reviewing the app performs the final download click.
 
 Do not put private information into a project name or imported asset when
 recording or sharing a demo. The public source repository contains no private
@@ -144,19 +146,23 @@ npm run sample
 node research/validate-v2-exports.mjs
 ```
 
-Automated checks establish deterministic output, finite closed meshes, valid
-file structure, consistent project identity, and placement inside the
-configured bed. They do not certify printer tolerances, material performance,
-adhesion, or installation safety. Print a small qualification piece before a
-large build.
+Automated checks establish deterministic project geometry and same-runtime
+export repeatability, finite closed meshes, valid file structure, consistent
+project identity, and placement inside the configured bed. They do not certify
+printer tolerances, material performance, adhesion, or installation safety.
+Print a small qualification piece before a large build.
 
-The locked Polar Bloom challenge run produces project
-`wall-art-g6-238bfdaa`, with all 81 parts digitally placed across 62 plates.
-Every part is manifold, and the full reference is closed and outward-wound.
-The 656,651-byte package has SHA-256
+In the recorded Chromium reference run, the locked Polar Bloom challenge flow
+produces project `wall-art-g6-238bfdaa`, with all 81 parts digitally placed
+across 62 plates. Every part is manifold, and the full reference is closed and
+outward-wound. The resulting 656,651-byte package has SHA-256
 `d86d4966242fd71542fcedab83bde3071447b9239e497fea2a9f59cc587462d0`.
-Its 215 entries include 81 part STLs, 62 packed-plate STLs, 63 3MF files, three
-PDFs, and supporting recipe and manifest files.
+Those values identify that audited browser artifact; exact ZIP bytes and
+equivalent near-tie packing choices are not claimed to match across JavaScript
+runtimes. Project identity, individual part geometry, finished dimensions,
+digital fit, and the 62-plate count matched across the audited runtimes. The
+reference ZIP's 215 entries include 81 part STLs, 62 packed-plate STLs, 63 3MF
+files, three PDFs, and supporting recipe and manifest files.
 
 ## License
 

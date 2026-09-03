@@ -2,8 +2,9 @@
 
 ## Supported version
 
-Security fixes are applied to the current `main` branch and the latest tagged
-development release. Older development snapshots are not maintained.
+Security fixes are applied to the current `main` branch. The
+`pre-webmcp-public-snapshot` baseline tag and other older development snapshots
+are not maintained.
 
 ## Reporting a vulnerability
 

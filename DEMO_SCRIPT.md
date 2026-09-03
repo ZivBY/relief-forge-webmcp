@@ -7,6 +7,15 @@ Final video: <https://youtu.be/_5KUM9er3xQ>
 The published video is Public, 1920 × 1080 at 30 fps, and includes timed
 English captions.
 
+> **Published-video accuracy note (1:27):** The video calls the largest part
+> footprint `195.808 × 195.808 mm` and describes it as just under 196 mm square.
+> Exact package data shows the largest actual placed footprint is
+> **195.808 × 190.805 mm**, with no part exceeding 195.808 mm in either
+> footprint dimension. The 246 × 246 mm bed-fit conclusion is unchanged. The
+> corrected measurements below are authoritative. Deterministic package bytes
+> refer to the recorded Chromium runtime; cross-runtime ZIP byte identity is
+> not claimed.
+
 ## Reproducible prompt
 
 Use this exact prompt:
@@ -33,13 +42,17 @@ Expected progression:
 2. `relief_forge_set_printer_bed` applies a 256 × 256 mm full bed, 5 mm margin,
    4 mm spacing, 90-degree rotation, and mixed-color packing. This produces the
    locked project `wall-art-g6-238bfdaa`. All 81 parts fit across 62 plates;
-   the largest part footprint is 195.808 × 195.808 mm inside the 246 × 246 mm
-   usable area.
+   the largest actual placed part footprint is 195.808 × 190.805 mm. No placed
+   part exceeds 195.808 mm in either footprint dimension, within the
+   246 × 246 mm usable area.
 3. `relief_forge_inspect_fabrication_plan` reports 81 of 81 parts placed, every
    part digitally manifold, and the full reference closed and outward-wound.
-4. `relief_forge_prepare_fabrication_package` prepares a 656,651-byte ZIP with
+4. In the recorded Chromium reference run,
+   `relief_forge_prepare_fabrication_package` prepares a 656,651-byte ZIP with
    SHA-256
    `d86d4966242fd71542fcedab83bde3071447b9239e497fea2a9f59cc587462d0`.
+   These values identify that audited browser artifact; cross-runtime byte
+   identity is not claimed.
 
 ## Shot and narration plan
 
@@ -91,7 +104,8 @@ model.”
 margin, 4 mm spacing, rotation enabled, and `separateColors: false`.
 
 **Screen:** Show the exact settings, the computed fit, 81 of 81 parts placed,
-62 plates, and the 195.808 × 195.808 mm maximum part footprint.
+62 plates, the 195.808 × 190.805 mm largest actual placed footprint, and the
+195.808 mm maximum in either footprint dimension.
 
 **Narration:** “Next, the printer tool applies a
 two-hundred-fifty-six-millimetre-square bed, five-millimetre margins,
@@ -110,6 +124,9 @@ design squeezed onto one bed. The largest part is just under
 one-hundred-ninety-six millimetres square, within the
 two-hundred-forty-six-millimetre usable area. Its exact footprint is shown on
 screen.”
+
+The wording above is preserved because it is the published narration; the
+accuracy note at the top records the authoritative measurement.
 
 ### 1:40–2:01 — Inspect the current project snapshot
 
