@@ -3,7 +3,11 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { JUDGE_DEMO_PROMPT, JUDGE_QUICK_START_STORAGE_KEY } from '../judge-quick-start'
+import {
+  JUDGE_DEMO_PROMPT,
+  JUDGE_QUICK_START_STORAGE_KEY,
+  type AgentToolsState,
+} from '../judge-quick-start'
 import { JudgeQuickStart } from './JudgeQuickStart'
 
 function buttonWithText(container: HTMLElement, text: string): HTMLButtonElement {
@@ -44,9 +48,9 @@ describe('JudgeQuickStart interactions', () => {
     window.localStorage.clear()
   })
 
-  async function renderQuickStart() {
+  async function renderQuickStart(agentToolsState: AgentToolsState = 'ready') {
     await act(async () => {
-      root.render(<JudgeQuickStart agentToolsState="ready" />)
+      root.render(<JudgeQuickStart agentToolsState={agentToolsState} />)
     })
   }
 
@@ -84,6 +88,43 @@ describe('JudgeQuickStart interactions', () => {
 
     expect(container.querySelector('#judge-quick-start-card')).toBeNull()
     expect(document.activeElement).toBe(trigger)
+  })
+
+  it('leaves Escape and focus ownership with an active modal dialog', async () => {
+    await renderQuickStart()
+    const trigger = buttonWithText(container, 'How it works')
+    const modal = document.createElement('section')
+    const modalButton = document.createElement('button')
+    modal.setAttribute('aria-modal', 'true')
+    modal.append(modalButton)
+    document.body.append(modal)
+    modalButton.focus()
+
+    try {
+      await act(async () => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      })
+
+      expect(container.querySelector('#judge-quick-start-card')).not.toBeNull()
+      expect(document.activeElement).toBe(modalButton)
+      expect(document.activeElement).not.toBe(trigger)
+    } finally {
+      modal.remove()
+    }
+  })
+
+  it('announces agent-tool status changes even when the visual badge is hidden', async () => {
+    await renderQuickStart('checking')
+    const liveStatus = container.querySelector<HTMLElement>('[role="status"]')
+
+    expect(liveStatus?.textContent).toContain('checking agent tools')
+    expect(liveStatus?.getAttribute('aria-live')).toBe('polite')
+
+    await renderQuickStart('ready')
+    expect(liveStatus?.textContent).toContain('four agent tools ready')
+
+    await renderQuickStart('error')
+    expect(liveStatus?.textContent).toContain('agent tool registration error')
   })
 
   it('shows useful feedback for both successful and blocked prompt copying', async () => {

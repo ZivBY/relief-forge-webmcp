@@ -152,6 +152,7 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
     if (!open) return undefined
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
+      if (document.querySelector('[aria-modal="true"]')) return
       setOpen(false)
       rememberJudgeQuickStartDismissed(getJudgeQuickStartStorage(window))
       triggerRef.current?.focus()
@@ -173,7 +174,13 @@ export function JudgeQuickStart({ agentToolsState }: { agentToolsState: AgentToo
 
   return (
     <div className="judge-quick-start">
-      <span className="local-badge" data-agent-tools={agentToolsState} aria-live="polite">
+      <span
+        className="visually-hidden"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >Agent tool status: {TRIGGER_STATUS_COPY[agentToolsState]}.</span>
+      <span className="local-badge" data-agent-tools={agentToolsState}>
         <i />{
           agentToolsState === 'ready'
             ? '4 AGENT TOOLS READY'

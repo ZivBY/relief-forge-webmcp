@@ -6,6 +6,8 @@ designed to let an agent use the same design, printer-packing, inspection, and
 export actions that a person can use in the visible editor.
 
 > Live challenge build: **<https://relief-forge-webmcp.bad-dog-food.chatgpt.site>**
+>
+> Final 2:58 demo: **<https://youtu.be/ZXDmuV3DANk>**
 
 ## What it demonstrates
 
@@ -21,7 +23,7 @@ Relief Forge exposes those actions as four narrow WebMCP tools:
 
 | Tool                                       | Purpose                                                                                                                                                                                                     |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `relief_forge_create_wall_art`             | Create a supported wall-art composition at explicit finished dimensions and depth. `topographic-terraces` makes a broad 4 × 3 field; `topographic-mosaic` makes a denser 12 × 8 field of 96 smaller panels. |
+| `relief_forge_create_wall_art`             | Create a supported wall-art composition at explicit finished dimensions and depth. Named recipes include broad and dense topographic fields plus `polar-bloom`, which maps its sizing controls to a center and four rings containing 81 radial `polar-petal` parts. |
 | `relief_forge_set_printer_bed`             | Set the full rectangular printer-bed dimensions, edge margin, and part spacing.                                                                                                                             |
 | `relief_forge_inspect_fabrication_plan`    | Read the current project's dimensions, parts, plates, and digital geometry/packing checks.                                                                                                                  |
 | `relief_forge_prepare_fabrication_package` | Build the fabrication package for the current project after its digital checks pass and expose the user-initiated download in the editor.                                                                   |
@@ -35,26 +37,40 @@ language model to invent mesh geometry.
 Use the hosted app as a top-level page in a WebMCP-capable agent context, then
 send:
 
-> Use Relief Forge to create a 48-inch-wide by 32-inch-tall topographic-terraces
-> wall piece, 28 mm deep, with deterministic seed `webmcp-showcase-073`. Fit it
-> to a 256 × 256 mm full printer bed with a 5 mm edge margin and 4 mm part
-> spacing, allow 90-degree rotation, and allow colors to share plates. Inspect
-> the plan. If a broad panel is oversized, preserve the exact dimensions,
-> depth, and seed but switch to the topographic-mosaic preset so the artwork has
-> 96 smaller panels with richer contour sampling. Reinspect and prepare the
-> package only if every part fits and the digital mesh checks pass.
+> Create a 48-inch Polar Bloom statement piece, 30 millimetres deep, using the
+> fixed seed webmcp-polar-bloom-showcase-001 and the warm architectural palette.
+> Fit it to a 256 by 256 millimetre printer bed with 5 millimetre margins and 4
+> millimetre spacing. Allow rotation and let colors share plates. Inspect the
+> exact plan, then prepare the fabrication package only if every digital check
+> passes.
 
 The explicit bed measurements make this prompt reproducible; “a Bambu printer”
 alone is ambiguous because different models and build-plate profiles can have
 different usable areas.
 
-The first 4 × 3 result is the requested 1219.2 × 812.8 mm, but a broad panel
-requires approximately 301.8 × 268.5 mm and cannot fit the 246 × 246 mm usable
-bed. The corrected preset preserves the finished size, depth, and seed while
-changing only the partition to a 12 × 8 grid. Its 96 approximately 100.4 mm
-panels fit four per plate, producing 24 print plates when colors may share a
-plate. The recipe configures eight possible terraced levels between 2.4 and 28
-mm; seven distinct positive surface heights occur across the full range.
+The locked result is a 1219.2 × 1219.2 mm composition with a 30 mm configured
+maximum depth and an actual 2.4–30 mm depth range. `polar-bloom` applies a fixed
+warm architectural palette; the model does not improvise the colors. The
+recipe maps its 10 × 10 sizing configuration to a center plus four concentric
+rings of radial sectors, yielding 81 parts rather than a 100-cell grid.
+
+With a 256 × 256 mm full bed, 5 mm margins, 4 mm spacing, 90-degree rotation
+enabled, and colors allowed to share plates, all 81 parts fit across 62 plates.
+The largest part footprint is 195.808 × 195.808 mm inside the 246 × 246 mm
+usable area.
+
+## Judge quick start
+
+On a first visit, the app opens a non-modal **Judge Quick Start** card. It shows
+whether all four agent tools are ready, explains the create–fit–inspect–prepare
+workflow, and provides one-click copying of the exact prompt above. A readable
+manual-copy fallback remains visible if clipboard access is blocked.
+
+Reviewers can dismiss the card and reopen it at any time with **How it works**.
+The dismissed state is stored only in local browser storage. If the page reports
+**manual editor mode**, the editor still works, but the agent workflow must be
+run in ChatGPT's built-in browser or another environment that exposes the
+imperative WebMCP API.
 
 ## Existing application and challenge extension
 
@@ -71,13 +87,14 @@ available in the
 comparison.
 
 The challenge work adds the four imperative WebMCP tools, tool lifecycle and
-validation coverage, two deterministic “topographic maps” style mappings, a
-visible agent-action status surface, and a separate sign-in-gated deployment.
-It does not replace the geometry or packing algorithms.
+validation coverage, named deterministic WebMCP recipes for topographic and
+Polar Bloom designs, a visible agent-action status surface, the Judge Quick
+Start guide, and a separate sign-in-gated deployment. It does not replace the
+geometry or packing algorithms.
 
 See [CHALLENGE.md](CHALLENGE.md) for the submission narrative and testing
-instructions, and [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the under-three-minute
-recording plan.
+instructions, and [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the published video's
+under-three-minute shot and narration breakdown.
 
 ## Access and privacy
 
@@ -126,10 +143,13 @@ configured bed. They do not certify printer tolerances, material performance,
 adhesion, or installation safety. Print a small qualification piece before a
 large build.
 
-On September 2, 2026, Codex's in-app browser discovered and executed all four
-tools against the live deployment. The exact test prompt produced the expected
-project `wall-art-g6-02471088`, 12 parts, 12 plates, and a prepared
-1,032,212-byte package with no browser-console warnings or errors.
+The locked Polar Bloom challenge run produces project
+`wall-art-g6-238bfdaa`, with all 81 parts digitally placed across 62 plates.
+Every part is manifold, and the full reference is closed and outward-wound.
+The 656,651-byte package has SHA-256
+`d86d4966242fd71542fcedab83bde3071447b9239e497fea2a9f59cc587462d0`.
+Its 215 entries include 81 part STLs, 62 packed-plate STLs, 63 3MF files, three
+PDFs, and supporting recipe and manifest files.
 
 ## License
 
